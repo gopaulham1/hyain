@@ -1,36 +1,31 @@
-"use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-
 export default function Home() {
-  const [query, setQuery] = useState("");
-  const router = useRouter();
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center bg-black text-white">
-      <h1 className="text-4xl md:text-6xl font-bold mb-4">
-        Hyain – AI Flight Search
-      </h1>
-      <p className="text-lg text-gray-300 mb-8">
-        Search smarter. Travel cheaper.
-      </p>
+    <main className="min-h-screen">
+      {/* Background */}
+      <div className="fixed inset-0 -z-10 bg-black" />
 
-      <div className="flex items-center gap-2 w-full max-w-md">
-        <input
-          type="text"
-          placeholder="e.g. London to Istanbul next weekend"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="flex-1 px-4 py-3 rounded-lg bg-gray-800 text-white placeholder-gray-500 focus:outline-none"
-        />
+      {/* Page container */}
+      <div className="mx-auto max-w-6xl px-6 py-8 text-white">
+        {/* Navbar placeholder */}
+        <div className="rounded-2xl border border-white/20 bg-white/10 px-6 py-4">
+          Navbar (logo + links later)
+        </div>
 
-        <button
-          onClick={() => {
-            router.push(`/results?query=${encodeURIComponent(query)}`);
-          }}
-          className="px-4 py-3 bg-white text-black font-semibold rounded-lg"
-        >
-          Search
-        </button>
+        {/* Hero section placeholder */}
+        <div className="mt-8 rounded-[28px] border border-white/20 bg-white/10 p-10">
+          Hero section (headline + search will live here)
+        </div>
+
+        {/* Bottom sections */}
+        <div className="mt-8 grid gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-8 rounded-[28px] border border-white/20 bg-white/10 p-8">
+            Left section (What’s on soon)
+          </div>
+
+          <div className="lg:col-span-4 rounded-[28px] border border-white/20 bg-white/10 p-8">
+            Right section (Cheapest deals)
+          </div>
+        </div>
       </div>
     </main>
   );
