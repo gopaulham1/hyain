@@ -16,7 +16,7 @@ export default function Home() {
       />
 
       {/* Dark overlay for readability */}
-      <div className="fixed inset-0 -z-10 bg-black/40" />
+      <div className="fixed inset-0 -z-10 bg-black/25" />
 
       {/* Page container */}
       <div className="mx-auto max-w-6xl px-6 py-8 text-white">
@@ -40,34 +40,36 @@ export default function Home() {
         </nav>
 
         {/* Hero section placeholder */}
-        <div className="mt-8 rounded-[28px] p-10 hyain-glass border border-white/15 shadow-xl shadow-black/30">
+        <div className="mt-10 rounded-[32px] px-12 py-14 hyain-glass border border-white/20 shadow-xl shadow-black/25">
           <div className="grid gap-8 lg:grid-cols-12">
             {/* LEFT SIDE — text + search */}
             <div className="lg:col-span-8">
-              <h1 className="text-4xl md:text-5xl font-semibold mb-4">
+              <h1 className="text-4xl md:text-6xl font-semibold tracking-tight mb-4 text-white/90">
                 Discover Your Next Journey
               </h1>
 
-              <p className="text-gray-300 mb-6">Search flights the easy way</p>
+              <p className="text-white/70 mb-7">Search flights the easy way</p>
 
               {/* Search bar (UI only for now) */}
-              <div className="flex gap-2 max-w-xl">
-                <input
-                  type="text"
-                  placeholder="e.g. London to Istanbul next weekend"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="flex-1 px-4 py-3 rounded-lg bg-gray-800 text-white placeholder-gray-500 focus:outline-none"
-                />
+              <div className="flex flex-col gap-3 max-w-2xl">
+                <div className="flex items-center gap-3 rounded-full border border-white/25 bg-white/20 backdrop-blur px-3 py-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. London to Istanbul next weekend"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="flex-1 bg-transparent px-4 py-2 text-white placeholder-white/60 focus:outline-none"
+                  />
 
-                <button
-                  onClick={() =>
-                    router.push(`/results?query=${encodeURIComponent(query)}`)
-                  }
-                  className="px-4 py-3 bg-white text-black font-semibold rounded-lg"
-                >
-                  Search
-                </button>
+                  <button
+                    onClick={() =>
+                      router.push(`/results?query=${encodeURIComponent(query)}`)
+                    }
+                    className="rounded-full bg-white px-6 py-2.5 text-black font-semibold hover:bg-white/90 transition"
+                  >
+                    Search
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -80,7 +82,7 @@ export default function Home() {
 
         {/* Bottom sections */}
         <div className="mt-8 grid gap-6 lg:grid-cols-12">
-          <div className="lg:col-span-8 rounded-[28px] p-8 hyain-glass border border-white/15 shadow-xl shadow-black/30">
+          <div className="lg:col-span-8 rounded-[28px] p-10 hyain-glass border border-white/15 shadow-xl shadow-black/30">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-semibold tracking-tight">
@@ -98,14 +100,14 @@ export default function Home() {
 
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               {/* Card 1 */}
-              <button className="group rounded-2xl border border-white/15 bg-white/10 p-4 text-left hover:bg-white/15 transition">
+              <button className="group rounded-2xl border border-white/15 bg-white/10 p-5 text-left hover:bg-white/15 transition">
                 <p className="text-lg font-semibold tracking-tight">Carnival</p>
                 <p className="text-sm text-white/70">Feb</p>
                 <div className="mt-3 h-20 rounded-xl bg-white/10" />
               </button>
 
               {/* Card 2 */}
-              <button className="group rounded-2xl border border-white/15 bg-white/10 p-4 text-left hover:bg-white/15 transition">
+              <button className="group rounded-2xl border border-white/15 bg-white/10 p-5 text-left hover:bg-white/15 transition">
                 <p className="text-lg font-semibold tracking-tight">
                   Cherry Blossoms
                 </p>
@@ -114,7 +116,7 @@ export default function Home() {
               </button>
 
               {/* Card 3 */}
-              <button className="group rounded-2xl border border-white/15 bg-white/10 p-4 text-left hover:bg-white/15 transition">
+              <button className="group rounded-2xl border border-white/15 bg-white/10 p-5 text-left hover:bg-white/15 transition">
                 <p className="text-lg font-semibold tracking-tight">
                   Cherry Blossoms
                 </p>
@@ -123,7 +125,7 @@ export default function Home() {
               </button>
 
               {/* Card 4 */}
-              <button className="group rounded-2xl border border-white/15 bg-white/10 p-4 text-left hover:bg-white/15 transition">
+              <button className="group rounded-2xl border border-white/15 bg-white/10 p-5 text-left hover:bg-white/15 transition">
                 <p className="text-lg font-semibold tracking-tight">
                   Oktoberfest
                 </p>
@@ -149,7 +151,7 @@ export default function Home() {
 
             <div className="mt-5 space-y-3">
               {/* Item 1 */}
-              <button className="w-full rounded-2xl border border-white/15 bg-white/10 p-4 text-left hover:bg-white/15 transition">
+              <button className="w-full rounded-2xl border border-white/15 bg-white/10 p-5 text-left hover:bg-white/15 transition">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-lg font-semibold tracking-tight">
@@ -163,7 +165,7 @@ export default function Home() {
               </button>
 
               {/* Item 2 */}
-              <button className="w-full rounded-2xl border border-white/15 bg-white/10 p-4 text-left hover:bg-white/15 transition">
+              <button className="w-full rounded-2xl border border-white/15 bg-white/10 p-5 text-left hover:bg-white/15 transition">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-lg font-semibold tracking-tight">Rome</p>
@@ -175,7 +177,7 @@ export default function Home() {
               </button>
 
               {/* Item 3 */}
-              <button className="w-full rounded-2xl border border-white/15 bg-white/10 p-4 text-left hover:bg-white/15 transition">
+              <button className="w-full rounded-2xl border border-white/15 bg-white/10 p-5 text-left hover:bg-white/15 transition">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-lg font-semibold tracking-tight">
