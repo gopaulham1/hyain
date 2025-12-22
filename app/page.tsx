@@ -10,7 +10,7 @@ export default function Home() {
 
   const textHeroSub = "text-base md:text-lg text-white/80";
   const textSectionTitle = "text-lg md:text-xl font-semibold text-white";
-  const textMeta = "text-sm md:text-base text-white/80";
+  const textMeta = "text-sm md:text-base text-white";
 
   return (
     <main className="min-h-screen relative overflow-hidden">
@@ -106,7 +106,7 @@ export default function Home() {
                   </p>
                 </div>
 
-                <button className="text-sm md:text-base text-white/90 hover:text-white transition">
+                <button className="text-sm md:text-base text-white hover:text-white transition">
                   Find flights for this →
                 </button>
               </div>
@@ -225,7 +225,7 @@ export default function Home() {
                   <p className={`mt-1 ${textMeta}`}>This week or so</p>
                 </div>
 
-                <button className="text-sm md:text-base text-white/90 hover:text-white transition">
+                <button className="text-sm md:text-base text-white hover:text-white transition">
                   See weekend trips →
                 </button>
               </div>
