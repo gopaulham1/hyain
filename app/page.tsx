@@ -7,10 +7,10 @@ import Image from "next/image";
 export default function Home() {
   const [query, setQuery] = useState("");
   const router = useRouter();
+  const textHeroSub = "text-base md:text-lg text-gray-700";
+  const textSectionTitle = "text-xl md:text-2xl font-semibold text-gray-900";
 
-  const textHeroSub = "text-base md:text-lg text-white/80";
-  const textSectionTitle = "text-lg md:text-xl font-semibold text-white";
-  const textMeta = "text-sm md:text-base text-white";
+  const textMeta = "text-base md:text-xl text-gray-600";
 
   return (
     <main className="min-h-screen relative overflow-hidden">
@@ -21,36 +21,38 @@ export default function Home() {
       />
 
       {/* Dark overlay for readability */}
-      <div className="fixed inset-0 -z-10 bg-black/30" />
+      <div className="fixed inset-0 -z-10 bg-black/0" />
 
       {/* Page container */}
-      <div className="w-full px-2 md:px-4 py-8 text-white">
+      <div className="w-full px-2 md:px-4 py-8">
         <div className="mx-auto w-[min(1800px,98.5vw)]">
           {/* Navbar placeholder */}
           <nav className="flex items-center justify-between">
             {/* Left: Logo */}
-            <div className="hyain-serif text-3xl font-semibold tracking-tight text-white">
+            <div className="hyain-serif text-4xl font-semibold tracking-tight text-gray-900">
               Hyain
             </div>
 
             {/* Middle: links (hide on mobile for now) */}
-            <div className="hidden sm:flex items-center gap-8 text-white/80">
-              <button className="hover:text-white transition">About</button>
-              <button className="hover:text-white transition">♡ Saved</button>
+            <div className="hidden sm:flex items-center gap-8 text-base md:text-lg text-gray-700">
+              <button className="hover:text-gray-900 transition">About</button>
+              <button className="hover:text-gray-900 transition">
+                ♡ Saved
+              </button>
             </div>
 
             {/* Right: Sign in */}
-            <button className="rounded-full border border-white/20 bg-white/10 px-4 py-2 text-white backdrop-blur hover:bg-white/15 transition">
+            <button className="rounded-full border border-black/10 bg-white/70 px-5 py-2.5 text-base md:text-lg font-semibold text-gray-900 backdrop-blur hover:bg-white/90 transition">
               Sign in
             </button>
           </nav>
 
           {/* Hero section placeholder */}
-          <div className="mt-8 rounded-[28px] p-10 hyain-glass border border-white/15 shadow-xl shadow-black/30">
+          <div className="mt-8 rounded-[28px] p-10 hyain-glass-light-strong">
             <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr]">
               {/* LEFT SIDE — text + search */}
               <div>
-                <h1 className="hyain-serif text-4xl md:text-6xl font-medium tracking-tight mb-4 text-white/90">
+                <h1 className="hyain-serif text-4xl md:text-6xl font-medium tracking-tight mb-4 text-gray-900">
                   Discover Your Next Journey
                 </h1>
 
@@ -61,13 +63,13 @@ export default function Home() {
                 {/* Search bar (UI only for now) */}
                 {/* Search bar (UI only for now) */}
                 <div className="flex flex-col gap-3 w-full">
-                  <div className="flex w-full items-center gap-3 rounded-full border border-white/25 bg-white/20 backdrop-blur px-3 py-2 md:py-3">
+                  <div className="flex w-full items-center gap-3 rounded-full border border-white/45 bg-white/30 backdrop-blur-2xl px-3 py-2 md:py-3">
                     <input
                       type="text"
                       placeholder="e.g. London to Istanbul next weekend"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      className="flex-1 min-w-0 bg-transparent px-5 py-3 md:py-3 text-base md:text-lg text-white/95 placeholder-white/75 focus:outline-none"
+                      className="flex-1 min-w-0 bg-transparent px-5 py-3 md:py-3 text-base md:text-lg text-gray-900 placeholder-gray-500 focus:outline-none"
                     />
 
                     <button
@@ -85,7 +87,7 @@ export default function Home() {
               </div>
 
               {/* RIGHT SIDE — placeholder card */}
-              <div className="rounded-[28px] p-6 hyain-glass border border-white/15 shadow-xl shadow-black/30">
+              <div className="rounded-[28px] p-6 hyain-glass-light text-gray-700">
                 Cheapest deals card (coming next)
               </div>
             </div>
@@ -93,120 +95,115 @@ export default function Home() {
 
           {/* Bottom sections */}
           <div className="mt-8 grid gap-6 lg:grid-cols-12">
-            <div className="lg:col-span-8 rounded-[28px] p-10 hyain-glass border border-white/20 bg-black/20 shadow-xl shadow-black/40">
+            <div className="lg:col-span-8 rounded-[28px] p-10 hyain-glass-light">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2
-                    className={`hyain-serif tracking-tight ${textSectionTitle}`}
-                  >
+                  <h2 className="hyain-serif tracking-tight text-xl md:text-2xl font-extrabold text-gray-900">
                     What’s on soon
                   </h2>
+
                   <p className={`mt-1 ${textMeta}`}>
                     Top destinations from you
                   </p>
                 </div>
 
-                <button className="text-sm md:text-base text-white hover:text-white transition">
+                <button className="text-base md:text-lg font-semibold text-gray-700 hover:text-gray-900 transition">
                   Find flights for this →
                 </button>
               </div>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
                 {/* Card 1 */}
-                <button className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-4 text-left transition hover:bg-white/15">
+                <button className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30">
                   {/* Background image */}
                   <Image
                     src="/images/rio.jpg"
                     alt="Rio de Janeiro"
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
                     sizes="(max-width: 768px) 100vw, 33vw"
                   />
 
                   {/* Overlay (top text readable) */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/10" />
 
                   {/* Text */}
-                  <div className="relative z-10">
-                    <p className="text-lg font-semibold tracking-tight">
+                  <div className="relative z-10 text-gray-900">
+                    <p className="text-xl font-semibold tracking-tight text-gray-900">
                       Carnival
                     </p>
-                    <p className="text-sm md:text-base text-white/90">
+                    <p className="text-base md:text-lg text-gray-700">
                       Feb · Rio
                     </p>
                   </div>
                 </button>
 
                 {/* Card 2 */}
-                <button className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-4 text-left transition hover:bg-white/15">
+                <button className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30">
                   {/* Background image */}
                   <Image
                     src="/images/tokyo.jpg"
                     alt="Cherry Blossoms"
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
                     sizes="(max-width: 768px) 100vw, 33vw"
                   />
 
                   {/* Overlay (top text readable) */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/10" />
 
                   {/* Text */}
-                  <div className="relative z-10">
-                    <p className="text-lg font-semibold tracking-tight">
+                  <div className="relative z-10 text-gray-900">
+                    <p className="text-xl font-semibold tracking-tight text-gray-900">
                       Cherry Blossoms
                     </p>
-                    <p className="text-sm md:text-base text-white/90">
+                    <p className="text-base md:text-lg text-gray-700">
                       Mar – Apr · Tokyo
                     </p>
                   </div>
                 </button>
 
                 {/* Card 3 */}
-                <button className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-4 text-left transition hover:bg-white/15">
+                <button className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30">
                   {/* Background image */}
                   <Image
                     src="/images/kyoto.jpg"
                     alt="Kyoto"
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
                     sizes="(max-width: 768px) 100vw, 33vw"
                   />
 
                   {/* Overlay (top text readable) */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/10" />
 
                   {/* Text */}
-                  <div className="relative z-10">
-                    <p className="text-lg font-semibold tracking-tight">
+                  <div className="relative z-10 text-gray-900">
+                    <p className="text-xl font-semibold tracking-tight text-gray-900">
                       Cherry Blossoms
                     </p>
-                    <p className="text-sm md:text-base text-white/90">
+                    <p className="text-base md:text-lg text-gray-700">
                       Mar – Apr · Kyoto
                     </p>
                   </div>
                 </button>
 
                 {/* Card 4 */}
-                <button className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-4 text-left transition hover:bg-white/15">
+                <button className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30">
                   {/* Background image */}
                   <Image
                     src="/images/munich.jpg"
                     alt="Munich"
                     fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
                     sizes="(max-width: 768px) 100vw, 33vw"
                   />
 
                   {/* Overlay (top text readable) */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/30 to-black/10" />
 
                   {/* Text */}
-                  <div className="relative z-10">
-                    <p className="text-lg font-semibold tracking-tight">
-                      Carnival
+                  <div className="relative z-10 text-gray-900">
+                    <p className="text-xl font-semibold tracking-tight text-gray-900">
+                      Oktoberfest
                     </p>
-                    <p className="text-sm md:text-base text-white/90">
+                    <p className="text-base md:text-lg text-gray-700">
                       Sep · Munich
                     </p>
                   </div>
@@ -214,99 +211,102 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="lg:col-span-4 rounded-[28px] p-8 hyain-glass border border-white/20 bg-black/25 shadow-xl shadow-black/40 overflow-hidden lg:min-h-[360px]">
+            <div className="lg:col-span-4 rounded-[28px] p-8 hyain-glass-light overflow-hidden lg:min-h-[360px]">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2
-                    className={`hyain-serif tracking-tight ${textSectionTitle}`}
-                  >
+                  <h2 className="hyain-serif tracking-tight text-xl md:text-2xl font-extrabold text-gray-900">
                     Cheapest from London LTN
                   </h2>
-                  <p className={`mt-1 ${textMeta}`}>This week or so</p>
+
+                  <p className="mt-1 text-base md:text-lg font-semibold text-gray-600">
+                    This week or so
+                  </p>
                 </div>
 
-                <button className="text-sm md:text-base text-white hover:text-white transition">
+                <button className="text-base md:text-lg font-semibold text-gray-700 hover:text-gray-900 transition">
                   See weekend trips →
                 </button>
               </div>
 
               <div className="mt-5 space-y-3">
                 {/* Item 1 */}
-                <button className="group relative h-32 w-full overflow-hidden rounded-2xl border border-white/15 text-left transition duration-300 ease-out hover:bg-white/15 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/30">
+                <button className="group relative h-32 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 text-left transition duration-300 ease-out hover:bg-white/30 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/20">
                   {/* Background image */}
                   <Image
                     src="/images/paris.jpg"
                     alt="Paris"
                     fill
-                    className="object-cover"
+                    className="object-cover brightness-[1.15] contrast-[1.05]"
                     sizes="(max-width: 768px) 100vw, 33vw"
                   />
 
                   {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
 
                   {/* Content */}
-                  <div className="relative z-10 flex h-full items-start justify-between p-4">
+                  <div className="relative z-10 flex h-full items-start justify-between p-4 text-gray-900">
                     <div>
-                      <p className="text-lg font-semibold">Paris</p>
-                      <p className="text-sm md:text-base text-white/90">Feb</p>
+                      <p className="text-xl font-semibold text-gray-900">
+                        Paris
+                      </p>
+                      <p className="text-base md:text-lg text-gray-600">Feb</p>
                     </div>
-
-                    <p className="text-lg md:text-xl font-semibold text-white">
+                    <p className="text-xl md:text-2xl font-semibold text-gray-900">
                       £24
                     </p>
                   </div>
                 </button>
 
                 {/* Item 2 */}
-                <button className="group relative h-32 w-full overflow-hidden rounded-2xl border border-white/15 text-left transition duration-300 ease-out hover:bg-white/15 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/30">
+                <button className="group relative h-32 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 text-left transition duration-300 ease-out hover:bg-white/30 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/20">
                   {/* Background image */}
                   <Image
                     src="/images/rome.jpg"
                     alt="Rome"
                     fill
-                    className="object-cover"
+                    className="object-cover brightness-[1.15] contrast-[1.05]"
                     sizes="(max-width: 768px) 100vw, 33vw"
                   />
 
                   {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
 
                   {/* Content */}
-                  <div className="relative z-10 flex h-full items-start justify-between p-4">
+                  <div className="relative z-10 flex h-full items-start justify-between p-4 text-gray-900">
                     <div>
-                      <p className="text-lg font-semibold">Rome</p>
-                      <p className="text-sm md:text-base text-white/90">Jan</p>
+                      <p className="text-xl font-semibold text-gray-900">
+                        Rome
+                      </p>
+                      <p className="text-base md:text-lg text-gray-600">Jan</p>
                     </div>
 
-                    <p className="text-lg md:text-xl font-semibold text-white">
+                    <p className="text-xl md:text-2xl font-semibold text-gray-900">
                       £39
                     </p>
                   </div>
                 </button>
 
                 {/* Item 3 */}
-                <button className="group relative h-32 w-full overflow-hidden rounded-2xl border border-white/15 text-left transition duration-300 ease-out hover:bg-white/15 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/30">
+                <button className="group relative h-32 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 text-left transition duration-300 ease-out hover:bg-white/30 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/20">
                   {/* Background image */}
                   <Image
                     src="/images/barcelona.jpg"
                     alt="Barcelona"
                     fill
-                    className="object-cover"
+                    className="object-cover brightness-[1.15] contrast-[1.05]"
                     sizes="(max-width: 768px) 100vw, 33vw"
                   />
 
                   {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-transparent" />
 
                   {/* Content */}
-                  <div className="relative z-10 flex h-full items-start justify-between p-4">
+                  <div className="relative z-10 flex h-full items-start justify-between p-4 text-gray-900">
                     <div>
-                      <p className="text-lg font-semibold">Barcelona</p>
-                      <p className="text-sm md:text-base text-white/90">Nov</p>
+                      <p className="text-xl font-semibold text-gray-900">
+                        Barcelona
+                      </p>
+                      <p className="text-base md:text-lg text-gray-600">Nov</p>
                     </div>
 
-                    <p className="text-lg md:text-xl font-semibold text-white">
+                    <p className="text-xl md:text-2xl font-semibold text-gray-900">
                       £55
                     </p>
                   </div>
