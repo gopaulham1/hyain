@@ -63,7 +63,7 @@ export default function Home() {
                 {/* Search bar (UI only for now) */}
                 {/* Search bar (UI only for now) */}
                 <div className="flex flex-col gap-3 w-full">
-                  <div className="flex w-full items-center gap-3 rounded-full border border-white/45 bg-white/30 backdrop-blur-2xl px-3 py-2 md:py-3">
+                  <div className="flex w-full items-center gap-3 rounded-full bg-white/45 border border-black/10 shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_10px_30px_rgba(0,0,0,0.08)] backdrop-blur-2xl px-3 py-2 md:py-3 transition hover:border-black/20 focus-within:border-black/30 focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_10px_30px_rgba(0,0,0,0.08),0_0_0_3px_rgba(0,0,0,0.10)]">
                     <input
                       type="text"
                       placeholder="e.g. London to Istanbul next weekend"
@@ -87,7 +87,7 @@ export default function Home() {
               </div>
 
               {/* RIGHT SIDE — placeholder card */}
-              <div className="rounded-[28px] p-6 hyain-glass-light text-gray-700">
+              <div className="rounded-[28px] p-6 hyain-glass-light-soft-solid text-gray-700">
                 Cheapest deals card (coming next)
               </div>
             </div>
@@ -117,7 +117,7 @@ export default function Home() {
                 <button className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30">
                   {/* Background image */}
                   <Image
-                    src="/images/rio.jpg"
+                    src="/images/rio3.jpg"
                     alt="Rio de Janeiro"
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
@@ -141,7 +141,7 @@ export default function Home() {
                 <button className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30">
                   {/* Background image */}
                   <Image
-                    src="/images/tokyo.jpg"
+                    src="/images/tokyo2.jpg"
                     alt="Cherry Blossoms"
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
@@ -165,8 +165,8 @@ export default function Home() {
                 <button className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30">
                   {/* Background image */}
                   <Image
-                    src="/images/kyoto.jpg"
-                    alt="Kyoto"
+                    src="/images/london2.jpg"
+                    alt="London"
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
                     sizes="(max-width: 768px) 100vw, 33vw"
@@ -177,10 +177,10 @@ export default function Home() {
                   {/* Text */}
                   <div className="relative z-10 text-gray-900">
                     <p className="text-xl font-semibold tracking-tight text-gray-900">
-                      Cherry Blossoms
+                      Winter Wonderland
                     </p>
                     <p className="text-base md:text-lg text-gray-700">
-                      Mar – Apr · Kyoto
+                      Nov – Jan · London
                     </p>
                   </div>
                 </button>
@@ -189,8 +189,8 @@ export default function Home() {
                 <button className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30">
                   {/* Background image */}
                   <Image
-                    src="/images/munich.jpg"
-                    alt="Munich"
+                    src="/images/prague.jpg"
+                    alt="Prague"
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
                     sizes="(max-width: 768px) 100vw, 33vw"
@@ -201,17 +201,17 @@ export default function Home() {
                   {/* Text */}
                   <div className="relative z-10 text-gray-900">
                     <p className="text-xl font-semibold tracking-tight text-gray-900">
-                      Oktoberfest
+                      Christmas Markets
                     </p>
                     <p className="text-base md:text-lg text-gray-700">
-                      Sep · Munich
+                      Nov - Dec · Prague
                     </p>
                   </div>
                 </button>
               </div>
             </div>
 
-            <div className="lg:col-span-4 rounded-[28px] p-8 hyain-glass-light overflow-hidden lg:min-h-[360px]">
+            <div className="lg:col-span-4 rounded-[28px] p-8 hyain-glass-light-soft-solid overflow-hidden lg:min-h-[360px]">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="hyain-serif tracking-tight text-xl md:text-2xl font-extrabold text-gray-900">
