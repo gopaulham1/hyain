@@ -6,7 +6,23 @@ import Image from "next/image";
 
 export default function Home() {
   const [query, setQuery] = useState("");
+  const [from, setFrom] = useState("London");
+  const [to, setTo] = useState("Anywhere");
+  const [when, setWhen] = useState("Flexible");
+  const [who, setWho] = useState("1 traveler");
+
   const router = useRouter();
+  function buildQuery(
+    next?: Partial<{ from: string; to: string; when: string; who: string }>
+  ) {
+    const f = next?.from ?? from;
+    const t = next?.to ?? to;
+    const w = next?.when ?? when;
+    const p = next?.who ?? who;
+
+    return `Flights from ${f} to ${t} ${w}`.replace(/\s+/g, " ").trim();
+  }
+
   const textHeroSub = "text-base md:text-lg text-gray-700";
   const textSectionTitle = "text-xl md:text-2xl font-semibold text-gray-900";
 
@@ -87,8 +103,74 @@ export default function Home() {
               </div>
 
               {/* RIGHT SIDE — placeholder card */}
-              <div className="rounded-[28px] p-6 hyain-glass-light-soft-solid text-gray-700">
-                Cheapest deals card (coming next)
+              {/* RIGHT SIDE — compact search builder */}
+              <div className="rounded-[28px] p-6 hyain-glass-light-soft-solid">
+                <div className="mt-2 space-y-3">
+                  {/* Row 1 */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      className="rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
+                      onClick={() => {
+                        setFrom("London");
+                        setQuery(buildQuery({ from: "London" }));
+                      }}
+                    >
+                      <div className="text-[11px] text-gray-600">
+                        Where from?
+                      </div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {from}{" "}
+                        <span className="text-gray-500 font-normal">(Any)</span>
+                      </div>
+                    </button>
+
+                    <button
+                      className="rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
+                      onClick={() => {
+                        setTo("Anywhere");
+                        setQuery(buildQuery({ to: "Anywhere" }));
+                      }}
+                    >
+                      <div className="text-[11px] text-gray-600">Where to?</div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {to}
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Row 2 */}
+                  {/* Row 2 */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      className="rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
+                      onClick={() => {
+                        setWhen("Flexible");
+                        setQuery(buildQuery({ when: "Flexible" }));
+                      }}
+                    >
+                      <div className="text-[11px] text-gray-600">When?</div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {when}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        Flexible dates get cheaper flights
+                      </div>
+                    </button>
+
+                    <button
+                      className="rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
+                      onClick={() => {
+                        setWho("1 traveler");
+                        setQuery(buildQuery({ who: "1 traveler" }));
+                      }}
+                    >
+                      <div className="text-[11px] text-gray-600">Who?</div>
+                      <div className="text-sm font-semibold text-gray-900">
+                        {who}
+                      </div>
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
