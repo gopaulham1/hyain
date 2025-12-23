@@ -1,5 +1,5 @@
-import type { Flight } from "@/app/types/flight";
-import { mockResults } from "@/app/data/mockResults";
+import type { Flight } from "@/types/flight";
+import { mockResults } from "@/data/mockResults";
 
 
 function parsePrice(price: string): number {
