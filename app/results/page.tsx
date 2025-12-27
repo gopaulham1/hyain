@@ -94,6 +94,11 @@ export default function ResultsPage() {
   const [selectedAirline, setSelectedAirline] = useState<string | null>(null);
   const [tab, setTab] = useState<SortTab>("best");
 
+  type VisaUIState = "neutral" | "good" | "warn";
+
+  const [visaState, setVisaState] = useState<VisaUIState>("good");
+  // switch to: "neutral" | "warn" to preview other looks
+
   useEffect(() => {
     async function fetchFlights() {
       try {
@@ -299,13 +304,37 @@ export default function ResultsPage() {
 
                   <div className="mt-4 space-y-3 text-gray-800">
                     {/* Status */}
-                    <div className="rounded-xl bg-white/30 border border-black/10 p-3">
-                      <p className="font-semibold">
-                        🛂 Visa required: depends on passport
-                      </p>
-                      <p className="text-sm text-gray-700 mt-1">
-                        Tell Hyain your passport to show accurate rules.
-                      </p>
+                    {/* Visa status hero */}
+                    <div className="rounded-2xl border border-emerald-600/25 bg-emerald-500/12 p-4 backdrop-blur-2xl">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-gray-900">
+                            ✅ Visa-free
+                          </p>
+
+                          <p className="mt-1 text-lg font-semibold text-gray-900">
+                            90 days visa-free
+                          </p>
+
+                          <p className="mt-1 text-sm text-gray-700">
+                            UK passport · tourism & business
+                          </p>
+                        </div>
+
+                        <span className="shrink-0 rounded-full bg-emerald-500/20 border border-emerald-700/25 px-3 py-1 text-xs font-semibold text-emerald-900">
+                          OK to enter
+                        </span>
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button className="rounded-full bg-white/50 border border-black/10 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-white/70 transition">
+                          Change passport →
+                        </button>
+
+                        <button className="rounded-full bg-white/25 border border-black/10 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-white/40 transition">
+                          Official source →
+                        </button>
+                      </div>
                     </div>
 
                     {/* Clickable rows */}
