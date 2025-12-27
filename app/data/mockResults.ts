@@ -1,4 +1,4 @@
-import type { Flight } from "@/app/types/flight";
+import type { Flight } from "../types/flight";
 
 export const mockResults: Flight[] = [
   // 🇫🇷 PARIS
