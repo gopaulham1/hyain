@@ -2,9 +2,10 @@
 
 import type { Flight } from "../types/flight";
 import FlightCard from "../components/FlightCard";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import BuildQueryCard from "../components/BuildQueryCard";
 
 function parsePrice(price: string): number {
   return Number(price.replace("£", "").trim());
@@ -87,6 +88,37 @@ export default function ResultsPage() {
   const searchParams = useSearchParams();
   const query = searchParams.get("query") || "";
 
+  const router = useRouter();
+
+  // This is what the input shows (so user can edit + search again)
+  const [queryInput, setQueryInput] = useState(query);
+
+  // Keep input in sync when URL query changes (e.g. back/forward)
+  useEffect(() => {
+    setQueryInput(query);
+  }, [query]);
+
+  // Builder state (same as home)
+  const [from, setFrom] = useState("London");
+  const [to, setTo] = useState("Anywhere");
+  const [when, setWhen] = useState("Flexible");
+  const [who, setWho] = useState("1 traveler");
+
+  function buildQuery(
+    next?: Partial<{ from: string; to: string; when: string; who: string }>
+  ) {
+    const f = next?.from ?? from;
+    const t = next?.to ?? to;
+    const w = next?.when ?? when;
+
+    return `Flights from ${f} to ${t} ${w}`.replace(/\s+/g, " ").trim();
+  }
+
+  function submitSearch() {
+    if (!queryInput.trim()) return;
+    router.push(`/results?query=${encodeURIComponent(queryInput)}`);
+  }
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -154,7 +186,7 @@ export default function ResultsPage() {
 
   const pillClass = (active: boolean) =>
     [
-      "rounded-full px-4 py-2 text-sm font-semibold transition",
+      "rounded-full px-6 py-3 text-base font-medium transition cursor-pointer select-none",
       "border",
       "active:scale-[0.97]",
       active
@@ -196,24 +228,67 @@ export default function ResultsPage() {
 
           {/* Big glass container */}
           <section className="mt-8 rounded-[28px] p-8 md:p-10 hyain-glass-light-strong">
-            <div className="grid gap-8 lg:grid-cols-12">
+            {/* HERO SEARCH (same vibe as home, but inside results) */}
+            <div className="rounded-[28px] p-8 hyain-glass-light-soft-solid mb-14">
+              <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+                {/* LEFT SIDE — text + search */}
+                <div>
+                  <h1 className="hyain-serif text-3xl md:text-5xl font-medium tracking-tight mb-3 text-gray-900">
+                    Discover Your Next Journey
+                  </h1>
+
+                  <p className="text-base md:text-lg text-gray-700 mb-5">
+                    Search flights the easy way
+                  </p>
+
+                  {/* Search bar */}
+                  <div className="flex flex-col gap-3 w-full">
+                    <div className="flex w-full items-center gap-3 rounded-full bg-white/45 border border-black/10 shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_10px_30px_rgba(0,0,0,0.08)] backdrop-blur-2xl px-3 py-2 md:py-3 transition hover:border-black/20 focus-within:border-black/30 focus-within:shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_10px_30px_rgba(0,0,0,0.08),0_0_0_3px_rgba(0,0,0,0.10)]">
+                      <input
+                        type="text"
+                        placeholder="e.g. London to Istanbul next weekend"
+                        value={queryInput}
+                        onChange={(e) => setQueryInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            submitSearch();
+                          }
+                        }}
+                        className="flex-1 min-w-0 bg-transparent px-5 py-3 md:py-3 text-base md:text-lg text-gray-900 placeholder-gray-500 focus:outline-none"
+                      />
+
+                      <button
+                        onClick={submitSearch}
+                        className="shrink-0 rounded-full bg-white px-6 py-2.5 md:py-3 text-black font-semibold hover:bg-white/90 transition"
+                      >
+                        Search
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RIGHT SIDE — compact search builder */}
+                <BuildQueryCard
+                  from={from}
+                  to={to}
+                  when={when}
+                  who={who}
+                  setFrom={setFrom}
+                  setTo={setTo}
+                  setWhen={setWhen}
+                  setWho={setWho}
+                  setQuery={setQueryInput}
+                  buildQuery={buildQuery}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-0 lg:grid-cols-12">
               {/* LEFT: results */}
               <div className="lg:col-span-8">
-                <h1 className="hyain-serif text-3xl md:text-5xl font-medium tracking-tight text-gray-900">
-                  Search results
-                </h1>
-
-                <p className="mt-2 text-base md:text-lg text-gray-700">
-                  Showing matches for your search
-                </p>
-
-                <p className="mt-4 text-lg md:text-2xl text-gray-900">
-                  You searched:{" "}
-                  <span className="font-semibold">“{query || "…"}”</span>
-                </p>
-
                 {/* Pills */}
-                <div className="mt-5 flex flex-wrap gap-3">
+                <div className="mt-0 flex flex-wrap gap-3">
                   <button
                     className={pillClass(tab === "best")}
                     onClick={() => setTab("best")}
@@ -286,7 +361,7 @@ export default function ResultsPage() {
 
               {/* RIGHT: sidebar (two separate cards, no overlap) */}
               <aside className="lg:col-span-4 grid gap-6 self-start lg:sticky lg:top-6 lg:pl-2">
-                <div className="rounded-[22px] p-6 bg-white/45 border border-white/45 backdrop-blur-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)]">
+                <div className="rounded-[22px] p-6 bg-white/70 border border-white/45 backdrop-blur-m shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)]">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <h2 className="hyain-serif text-2xl font-semibold text-gray-900">
@@ -361,7 +436,7 @@ export default function ResultsPage() {
                   </div>
                 </div>
 
-                <div className="rounded-[22px] p-6 bg-white/45 border border-white/45 backdrop-blur-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)]">
+                <div className="rounded-[22px] p-6 bg-white/70 border border-white/45 backdrop-blur-m shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)]">
                   <h2 className="hyain-serif text-2xl font-semibold text-gray-900">
                     Trip Snapshot
                   </h2>
@@ -391,7 +466,7 @@ export default function ResultsPage() {
                   </div>
                 </div>
 
-                <div className="rounded-[22px] p-6 bg-white/45 border border-white/45 backdrop-blur-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)]">
+                <div className="rounded-[22px] p-6 bg-white/70 border border-white/45 backdrop-blur-m shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)]">
                   <h2 className="hyain-serif text-2xl font-semibold text-gray-900">
                     Travel tips
                   </h2>

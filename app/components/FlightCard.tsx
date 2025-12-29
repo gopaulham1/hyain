@@ -69,10 +69,10 @@ export default function FlightCard({
     <div
       onClick={onClick}
       className={[
-        "rounded-2xl border border-white/30 bg-white/30 backdrop-blur-2xl",
+        "rounded-2xl border border-white/35 bg-white/40 backdrop-blur-m",
         "shadow-[0_0_0_1px_rgba(255,255,255,0.50)_inset,0_10px_30px_rgba(0,0,0,0.08)]",
         "px-5 py-4 transition cursor-pointer",
-        "hover:bg-white/40",
+        "hover:bg-white/70",
         selected ? "ring-2 ring-black/20" : "",
       ].join(" ")}
     >

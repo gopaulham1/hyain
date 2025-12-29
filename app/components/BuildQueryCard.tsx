@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 type Props = {
   from: string;
   to: string;
@@ -32,34 +34,97 @@ export default function BuildQueryCard({
   setQuery,
   buildQuery,
 }: Props) {
+  const [fromOpen, setFromOpen] = useState(false);
+
+  const fromOptions = [
+    "London",
+    "Anywhere",
+    "Europe",
+    "United Kingdom",
+    "France",
+    "Italy",
+    "Spain",
+    "Switzerland",
+  ];
+  const [toOpen, setToOpen] = useState(false);
+
+  const toOptions = [
+    "Anywhere",
+    "Europe",
+    "United Kingdom",
+    "France",
+    "Italy",
+    "Spain",
+    "Switzerland",
+    "Turkey",
+  ];
+
   return (
     <div className="rounded-[28px] p-6 hyain-glass-light-soft-solid">
       <div className="mt-2 space-y-3">
         {/* Row 1 */}
         <div className="grid grid-cols-2 gap-3">
-          <button
-            className="rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
-            onClick={() => {
-              setFrom("London");
-              setQuery(buildQuery({ from: "London" }));
-            }}
-          >
-            <div className="text-[11px] text-gray-600">Where from?</div>
-            <div className="text-sm font-semibold text-gray-900">
-              {from} <span className="text-gray-500 font-normal">(Any)</span>
-            </div>
-          </button>
+          <div className="relative">
+            <button
+              type="button"
+              className="w-full rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
+              onClick={() => setFromOpen((v) => !v)}
+            >
+              <div className="text-[11px] text-gray-600">Where from?</div>
+              <div className="text-sm font-semibold text-gray-900">
+                {from} <span className="text-gray-500 font-normal">(Any)</span>
+              </div>
+            </button>
 
-          <button
-            className="rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
-            onClick={() => {
-              setTo("Anywhere");
-              setQuery(buildQuery({ to: "Anywhere" }));
-            }}
-          >
-            <div className="text-[11px] text-gray-600">Where to?</div>
-            <div className="text-sm font-semibold text-gray-900">{to}</div>
-          </button>
+            {fromOpen && (
+              <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl bg-white/85 backdrop-blur-md border border-black/10 shadow-lg">
+                {fromOptions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-black/5 transition"
+                    onClick={() => {
+                      setFrom(option);
+                      setQuery(buildQuery({ from: option }));
+                      setFromOpen(false);
+                    }}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="relative">
+            <button
+              type="button"
+              className="w-full rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
+              onClick={() => setToOpen((v) => !v)}
+            >
+              <div className="text-[11px] text-gray-600">Where to?</div>
+              <div className="text-sm font-semibold text-gray-900">{to}</div>
+            </button>
+
+            {toOpen && (
+              <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl bg-white/85 backdrop-blur-md border border-black/10 shadow-lg">
+                {toOptions.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-black/5 transition"
+                    onClick={() => {
+                      setTo(option);
+                      setQuery(buildQuery({ to: option }));
+                      setToOpen(false);
+                    }}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Row 2 */}
