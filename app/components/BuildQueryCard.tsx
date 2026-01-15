@@ -39,24 +39,20 @@ export default function BuildQueryCard({
   const fromOptions = [
     "London",
     "Anywhere",
-    "Europe",
-    "United Kingdom",
-    "France",
-    "Italy",
-    "Spain",
-    "Switzerland",
+    "Paris",
+    "Dubai",
+    "Rome",
+    "Istanbul",
   ];
   const [toOpen, setToOpen] = useState(false);
 
   const toOptions = [
+    "London",
     "Anywhere",
-    "Europe",
-    "United Kingdom",
-    "France",
-    "Italy",
-    "Spain",
-    "Switzerland",
-    "Turkey",
+    "Paris",
+    "Dubai",
+    "Rome",
+    "Istanbul",
   ];
 
   return (

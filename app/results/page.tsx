@@ -7,6 +7,83 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import BuildQueryCard from "../components/BuildQueryCard";
 
+const MONTHS: Record<string, number> = {
+  january: 0,
+  february: 1,
+  march: 2,
+  april: 3,
+  may: 4,
+  june: 5,
+  july: 6,
+  august: 7,
+  september: 8,
+  october: 9,
+  november: 10,
+  december: 11,
+};
+
+function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
+  const query = q.toLowerCase();
+
+  // You can expand these phrases later
+  const hasNextWeek = /\bnext\s+week\b/.test(query);
+  const hasNextMonth = /\bnext\s+month\b/.test(query);
+
+  // Month name (e.g., "march", "april")
+  const monthName = Object.keys(MONTHS).find((m) =>
+    new RegExp(`\\b${m}\\b`).test(query)
+  );
+
+  const now = new Date();
+
+  // 1) next week = now -> now + 7 days (rolling)
+  if (hasNextWeek) {
+    const start = new Date(now);
+    const end = new Date(now);
+    end.setDate(end.getDate() + 7);
+    return { start, end };
+  }
+
+  // 2) next month = next calendar month (e.g., Jan -> Feb)
+  if (hasNextMonth) {
+    const start = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      1,
+      0,
+      0,
+      0,
+      0
+    );
+    const end = new Date(now.getFullYear(), now.getMonth() + 2, 1, 0, 0, 0, 0);
+    return { start, end };
+  }
+
+  // 3) named month = that calendar month (by default: this year)
+  if (monthName) {
+    const monthIndex = MONTHS[monthName];
+
+    // If user also typed a year like "2026", respect it
+    const yearMatch = query.match(/\b(20\d{2})\b/);
+    const year = yearMatch ? Number(yearMatch[1]) : now.getFullYear();
+
+    const start = new Date(year, monthIndex, 1, 0, 0, 0, 0);
+    const end = new Date(year, monthIndex + 1, 1, 0, 0, 0, 0);
+    return { start, end };
+  }
+
+  return null;
+}
+
+function flightInRange(
+  departureTimeISO: string,
+  range: { start: Date; end: Date }
+) {
+  const dep = new Date(departureTimeISO);
+  // Keep flights that depart in [start, end)
+  return dep >= range.start && dep < range.end;
+}
+
 function parsePrice(price: string): number {
   return Number(price.replace("£", "").trim());
 }
@@ -183,7 +260,17 @@ export default function ResultsPage() {
   }, [query]);
 
   const results = useMemo(() => {
-    const cloned = [...allResults];
+    // 1) Start from all results
+    let filtered = [...allResults];
+
+    // 2) Date filter based on the user's query string
+    const range = getDateRangeFromQuery(query);
+    if (range) {
+      filtered = filtered.filter((f) => flightInRange(f.departureTime, range));
+    }
+
+    // 3) Sorting (your existing logic)
+    const cloned = [...filtered];
 
     if (tab === "cheapest") {
       cloned.sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
@@ -197,7 +284,7 @@ export default function ResultsPage() {
       return cloned;
     }
 
-    // "best" (balanced feel): prefer cheap, then direct, then duration
+    // "best"
     cloned.sort((a, b) => {
       const priceDiff = parsePrice(a.price) - parsePrice(b.price);
       if (priceDiff !== 0) return priceDiff;
@@ -209,7 +296,7 @@ export default function ResultsPage() {
     });
 
     return cloned;
-  }, [allResults, tab]);
+  }, [allResults, tab, query]);
 
   const pillClass = (active: boolean) =>
     [
