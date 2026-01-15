@@ -66,6 +66,35 @@ const tokens = rawQuery
   .map((w) => w.trim())
   .filter((w) => w.length > 2 && !stopWords.has(w));
 
+  const norm = (s: string) => s.trim().toLowerCase();
+
+// We match per-field, not "anywhere in the whole string"
+const fieldContains = (field: string, wanted: string) =>
+  norm(field).includes(norm(wanted));
+
+// Extract "from X to Y" OR fallback "X to Y"
+function parseFromTo(q: string): { from?: string; to?: string } | null {
+  // "from X to Y"
+  const both = q.match(/\bfrom\s+(.+?)\s+to\s+(.+?)\b/i);
+  if (both) return { from: both[1].trim(), to: both[2].trim() };
+
+  // "from X"
+  const onlyFrom = q.match(/\bfrom\s+(.+?)\b/i);
+  if (onlyFrom) return { from: onlyFrom[1].trim() };
+
+  // "to Y"
+  const onlyTo = q.match(/\bto\s+(.+?)\b/i);
+  if (onlyTo) return { to: onlyTo[1].trim() };
+
+  // "X to Y"
+  const short = q.match(/\b(.+?)\s+to\s+(.+?)\b/i);
+  if (short) return { from: short[1].trim(), to: short[2].trim() };
+
+  return null;
+}
+
+
+
 
 if (rawQuery.includes("today")) dateIntent = "today";
 else if (rawQuery.includes("tomorrow")) dateIntent = "tomorrow";
@@ -87,16 +116,32 @@ if (!rawQuery) {
 }
 
 
-
+const route = parseFromTo(rawQuery);
 
 const filtered = mockResults.filter((flight) => {
-  const haystack = `${flight.airline} ${flight.from} ${flight.to}`.toLowerCase();
+  // No route intent → fallback to fuzzy search
+  if (!route) {
+    const haystack = `${flight.airline} ${flight.from} ${flight.to}`.toLowerCase();
+    if (tokens.length === 0) return true;
+    return tokens.some((token) => haystack.includes(token));
+  }
 
-  // If tokens is empty (e.g., query was only stopwords like "today"), return everything
-  if (tokens.length === 0) return true;
+  // Treat missing from/to as "Anywhere"
+  const wantsFrom = typeof route.from === "string";
+  const wantsTo = typeof route.to === "string";
 
-  return tokens.some((token) => haystack.includes(token));
+  const fromOk = wantsFrom
+    ? fieldContains(flight.from, route.from!)
+    : true;
+
+  const toOk = wantsTo
+    ? fieldContains(flight.to, route.to!)
+    : true;
+
+  return fromOk && toOk;
 });
+
+
 
 const ranked = filtered
   .map((f) => ({ ...f })) // ✅ clone objects so tagging is safe
