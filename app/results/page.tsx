@@ -187,8 +187,9 @@ export default function ResultsPage() {
     const f = next?.from ?? from;
     const t = next?.to ?? to;
     const w = next?.when ?? when;
+    const p = next?.who ?? who;
 
-    return `Flights from ${f} to ${t} ${w}`.replace(/\s+/g, " ").trim();
+    return `Flights from ${f} to ${t} ${w} ${p}`.replace(/\s+/g, " ").trim();
   }
 
   function submitSearch() {
@@ -260,17 +261,7 @@ export default function ResultsPage() {
   }, [query]);
 
   const results = useMemo(() => {
-    // 1) Start from all results
-    let filtered = [...allResults];
-
-    // 2) Date filter based on the user's query string
-    const range = getDateRangeFromQuery(query);
-    if (range) {
-      filtered = filtered.filter((f) => flightInRange(f.departureTime, range));
-    }
-
-    // 3) Sorting (your existing logic)
-    const cloned = [...filtered];
+    const cloned = [...allResults];
 
     if (tab === "cheapest") {
       cloned.sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
@@ -284,7 +275,7 @@ export default function ResultsPage() {
       return cloned;
     }
 
-    // "best"
+    // "best" (balanced feel): prefer cheap, then direct, then duration
     cloned.sort((a, b) => {
       const priceDiff = parsePrice(a.price) - parsePrice(b.price);
       if (priceDiff !== 0) return priceDiff;
@@ -296,7 +287,7 @@ export default function ResultsPage() {
     });
 
     return cloned;
-  }, [allResults, tab, query]);
+  }, [allResults, tab]);
 
   const pillClass = (active: boolean) =>
     [

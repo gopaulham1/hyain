@@ -21,8 +21,9 @@ export default function Home() {
     const f = next?.from ?? from;
     const t = next?.to ?? to;
     const w = next?.when ?? when;
+    const p = next?.who ?? who;
 
-    return `Flights from ${f} to ${t} ${w}`.replace(/\s+/g, " ").trim();
+    return `Flights from ${f} to ${t} ${w} ${p}`.replace(/\s+/g, " ").trim();
   }
 
   function submitSearch() {
