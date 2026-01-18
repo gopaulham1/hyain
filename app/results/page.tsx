@@ -166,6 +166,24 @@ export default function ResultsPage() {
   const query = searchParams.get("query") || "";
 
   const router = useRouter();
+  function extractFromTo(q: string): { from?: string; to?: string } {
+    const lower = q.toLowerCase();
+
+    // "flights from X to Y" OR "from X to Y"
+    const m1 = lower.match(/\bfrom\s+(.+?)\s+to\s+(.+?)(?:\s|$)/i);
+    if (m1) return { from: m1[1].trim(), to: m1[2].trim() };
+
+    // "X to Y"
+    const m2 = lower.match(/\b(.+?)\s+to\s+(.+?)(?:\s|$)/i);
+    if (m2) return { from: m2[1].trim(), to: m2[2].trim() };
+
+    // only "to Y"
+    const m3 = lower.match(/\bto\s+(.+?)(?:\s|$)/i);
+    if (m3) return { to: m3[1].trim() };
+
+    return {};
+  }
+  const route = useMemo(() => extractFromTo(query), [query]);
 
   // This is what the input shows (so user can edit + search again)
   const [queryInput, setQueryInput] = useState(query);
@@ -261,7 +279,19 @@ export default function ResultsPage() {
   }, [query]);
 
   const results = useMemo(() => {
-    const cloned = [...allResults];
+    let cloned = [...allResults];
+
+    // Route filter (prevents Istanbul→Dubai when user said London→Dubai)
+    if (route.from && route.from !== "anywhere") {
+      cloned = cloned.filter(
+        (f) => f.from.toLowerCase() === route.from!.toLowerCase()
+      );
+    }
+    if (route.to && route.to !== "anywhere") {
+      cloned = cloned.filter(
+        (f) => f.to.toLowerCase() === route.to!.toLowerCase()
+      );
+    }
 
     if (tab === "cheapest") {
       cloned.sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
@@ -287,7 +317,7 @@ export default function ResultsPage() {
     });
 
     return cloned;
-  }, [allResults, tab]);
+  }, [allResults, tab, route]);
 
   const pillClass = (active: boolean) =>
     [
