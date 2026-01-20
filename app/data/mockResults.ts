@@ -402,7 +402,7 @@ export const mockResults: Flight[] = [
   },
     {
     airline: "British Airways",
-    from: "London",
+    from: "Dubai",
     to: "Paris",
     price: "£89",
     duration: "1h 15m",

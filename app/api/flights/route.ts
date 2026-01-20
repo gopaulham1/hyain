@@ -81,14 +81,14 @@ function parseFromTo(q: string): { from?: string; to?: string } | null {
   // "from X"
   const onlyFrom = q.match(/\bfrom\s+(.+?)\b/i);
   if (onlyFrom) return { from: onlyFrom[1].trim() };
+  
+    // "X to Y"
+  const short = q.match(/\b(.+?)\s+to\s+(.+?)\b/i);
+  if (short) return { from: short[1].trim(), to: short[2].trim() };
 
   // "to Y"
   const onlyTo = q.match(/\bto\s+(.+?)\b/i);
   if (onlyTo) return { to: onlyTo[1].trim() };
-
-  // "X to Y"
-  const short = q.match(/\b(.+?)\s+to\s+(.+?)\b/i);
-  if (short) return { from: short[1].trim(), to: short[2].trim() };
 
   return null;
 }

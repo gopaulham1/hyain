@@ -31,7 +31,7 @@ function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
 
   // Month name (e.g., "march", "april")
   const monthName = Object.keys(MONTHS).find((m) =>
-    new RegExp(`\\b${m}\\b`).test(query)
+    new RegExp(`\\b${m}\\b`).test(query),
   );
 
   const now = new Date();
@@ -53,7 +53,7 @@ function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
       0,
       0,
       0,
-      0
+      0,
     );
     const end = new Date(now.getFullYear(), now.getMonth() + 2, 1, 0, 0, 0, 0);
     return { start, end };
@@ -77,7 +77,7 @@ function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
 
 function flightInRange(
   departureTimeISO: string,
-  range: { start: Date; end: Date }
+  range: { start: Date; end: Date },
 ) {
   const dep = new Date(departureTimeISO);
   // Keep flights that depart in [start, end)
@@ -196,11 +196,11 @@ export default function ResultsPage() {
   // Builder state (same as home)
   const [from, setFrom] = useState("London");
   const [to, setTo] = useState("Anywhere");
-  const [when, setWhen] = useState("Flexible");
+  const [when, setWhen] = useState("Any time");
   const [who, setWho] = useState("1 traveler");
 
   function buildQuery(
-    next?: Partial<{ from: string; to: string; when: string; who: string }>
+    next?: Partial<{ from: string; to: string; when: string; who: string }>,
   ) {
     const f = next?.from ?? from;
     const t = next?.to ?? to;
@@ -261,7 +261,7 @@ export default function ResultsPage() {
         setError(null);
 
         const res = await fetch(
-          `/api/flights?query=${encodeURIComponent(query)}`
+          `/api/flights?query=${encodeURIComponent(query)}`,
         );
         if (!res.ok) throw new Error("Failed to fetch flights");
 
@@ -281,16 +281,10 @@ export default function ResultsPage() {
   const results = useMemo(() => {
     let cloned = [...allResults];
 
-    // Route filter (prevents Istanbul→Dubai when user said London→Dubai)
-    if (route.from && route.from !== "anywhere") {
-      cloned = cloned.filter(
-        (f) => f.from.toLowerCase() === route.from!.toLowerCase()
-      );
-    }
-    if (route.to && route.to !== "anywhere") {
-      cloned = cloned.filter(
-        (f) => f.to.toLowerCase() === route.to!.toLowerCase()
-      );
+    // ✅ DATE FILTER (next week / next month / March etc.)
+    const range = getDateRangeFromQuery(query);
+    if (range) {
+      cloned = cloned.filter((f) => flightInRange(f.departureTime, range));
     }
 
     if (tab === "cheapest") {
@@ -300,12 +294,12 @@ export default function ResultsPage() {
 
     if (tab === "fastest") {
       cloned.sort(
-        (a, b) => parseDuration(a.duration) - parseDuration(b.duration)
+        (a, b) => parseDuration(a.duration) - parseDuration(b.duration),
       );
       return cloned;
     }
 
-    // "best" (balanced feel): prefer cheap, then direct, then duration
+    // "best" (balanced feel)
     cloned.sort((a, b) => {
       const priceDiff = parsePrice(a.price) - parsePrice(b.price);
       if (priceDiff !== 0) return priceDiff;
@@ -317,7 +311,7 @@ export default function ResultsPage() {
     });
 
     return cloned;
-  }, [allResults, tab, route]);
+  }, [allResults, tab, query]);
 
   const pillClass = (active: boolean) =>
     [
@@ -484,7 +478,7 @@ export default function ResultsPage() {
                       ·{" "}
                       <span className="font-semibold text-gray-900">
                         {Math.min(
-                          ...results.map((r) => parseDuration(r.duration))
+                          ...results.map((r) => parseDuration(r.duration)),
                         )}
                         m
                       </span>{" "}
@@ -494,7 +488,7 @@ export default function ResultsPage() {
                 )}
               </div>
 
-              {/* RIGHT: sidebar (two separate cards, no overlap) */}
+              {/* RIGHT: sidebar */}
               <aside className="lg:col-span-5 self-start lg:sticky lg:top-6 lg:pl-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="rounded-[22px] p-6 bg-white/70 border border-white/45 backdrop-blur-m shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)]">
@@ -522,7 +516,7 @@ export default function ResultsPage() {
                             <p className="text-sm font-semibold text-gray-900">
                               {visaByPassport[passport].statusEmoji}{" "}
                               {visaByPassport[passport].headline.includes(
-                                "Visa required"
+                                "Visa required",
                               )
                                 ? "Visa required"
                                 : "Visa-free"}
