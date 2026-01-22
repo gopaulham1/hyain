@@ -16,10 +16,10 @@ function TagPill({ tag }: { tag?: Flight["tag"] }) {
     tag === "BEST"
       ? "BEST MATCH"
       : tag === "CHEAPEST"
-      ? "CHEAPEST"
-      : tag === "FASTEST"
-      ? "FASTEST"
-      : "DIRECT";
+        ? "CHEAPEST"
+        : tag === "FASTEST"
+          ? "FASTEST"
+          : "DIRECT";
 
   return (
     <span className="inline-flex items-center rounded-full bg-black/10 border border-black/10 px-3 py-1 text-xs font-semibold text-gray-800">
@@ -60,6 +60,31 @@ function AirlineLogo({ airline }: { airline: string }) {
   );
 }
 
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString([], {
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+  });
+}
+
+function computeDuration(departure: string, arrival: string) {
+  const diff = new Date(arrival).getTime() - new Date(departure).getTime();
+
+  const minutes = Math.max(0, Math.floor(diff / 60000));
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+
+  return `${h}h ${m}m`;
+}
+
 export default function FlightCard({
   flight,
   selected,
@@ -92,7 +117,17 @@ export default function FlightCard({
             </p>
 
             <p className="mt-1 text-sm md:text-base text-gray-700">
-              {flight.duration} · {flight.stops}
+              <span className="font-semibold text-gray-900">
+                {formatTime(flight.departureTime)} →{" "}
+                {formatTime(flight.arrivalTime)}
+              </span>
+              <span className="mx-2 text-gray-400">·</span>
+              <span>{formatDate(flight.departureTime)}</span>
+            </p>
+
+            <p className="mt-0.5 text-sm text-gray-600">
+              {computeDuration(flight.departureTime, flight.arrivalTime)} ·{" "}
+              {flight.stops}
             </p>
 
             {flight.note && (
