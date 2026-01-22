@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import BuildQueryCard from "../components/BuildQueryCard";
 import ResultsSidebar from "../components/results/ResultsSidebar";
+import Navbar from "../components/Navbar";
 
 const MONTHS: Record<string, number> = {
   january: 0,
@@ -248,27 +249,7 @@ export default function ResultsPage() {
 
       <div className="w-full px-2 md:px-4 py-8">
         <div className="mx-auto w-[min(1800px,98.5vw)]">
-          {/* Navbar (match home) */}
-          <nav className="flex items-center justify-between">
-            <Link
-              href="/"
-              className="hyain-serif text-4xl font-semibold tracking-tight text-gray-900 hover:opacity-80 transition"
-            >
-              Hyain
-            </Link>
-
-            <div className="hidden sm:flex items-center gap-8 text-base md:text-lg text-gray-700">
-              <button className="hover:text-gray-900 transition">About</button>
-              <button className="hover:text-gray-900 transition">
-                ♡ Saved
-              </button>
-            </div>
-
-            <button className="rounded-full border border-black/10 bg-white/70 px-5 py-2.5 text-base md:text-lg font-semibold text-gray-900 backdrop-blur hover:bg-white/90 transition">
-              Sign in
-            </button>
-          </nav>
-
+          <Navbar />
           {/* Big glass container */}
           <section className="mt-8 rounded-[28px] p-8 md:p-10 hyain-glass-light-strong">
             {/* HERO SEARCH (same vibe as home, but inside results) */}

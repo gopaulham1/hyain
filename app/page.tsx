@@ -6,6 +6,7 @@ import Image from "next/image";
 import { whatsOnSoonCards } from "@/data/whatsOnSoon";
 import { cheapestDeals } from "@/data/cheapestDeals";
 import BuildQueryCard from "./components/BuildQueryCard";
+import Navbar from "./components/Navbar";
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -16,7 +17,7 @@ export default function Home() {
 
   const router = useRouter();
   function buildQuery(
-    next?: Partial<{ from: string; to: string; when: string; who: string }>
+    next?: Partial<{ from: string; to: string; when: string; who: string }>,
   ) {
     const f = next?.from ?? from;
     const t = next?.to ?? to;
@@ -49,27 +50,7 @@ export default function Home() {
       {/* Page container */}
       <div className="w-full px-2 md:px-4 py-8">
         <div className="mx-auto w-[min(1800px,98.5vw)]">
-          {/* Navbar placeholder */}
-          <nav className="flex items-center justify-between">
-            {/* Left: Logo */}
-            <div className="hyain-serif text-4xl font-semibold tracking-tight text-gray-900">
-              Hyain
-            </div>
-
-            {/* Middle: links (hide on mobile for now) */}
-            <div className="hidden sm:flex items-center gap-8 text-base md:text-lg text-gray-700">
-              <button className="hover:text-gray-900 transition">About</button>
-              <button className="hover:text-gray-900 transition">
-                ♡ Saved
-              </button>
-            </div>
-
-            {/* Right: Sign in */}
-            <button className="rounded-full border border-black/10 bg-white/70 px-5 py-2.5 text-base md:text-lg font-semibold text-gray-900 backdrop-blur hover:bg-white/90 transition">
-              Sign in
-            </button>
-          </nav>
-
+          <Navbar />
           {/* Hero section placeholder */}
           <div className="mt-8 rounded-[28px] p-10 hyain-glass-light-strong">
             <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr]">
