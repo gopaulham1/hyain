@@ -7,6 +7,7 @@ import { whatsOnSoonCards } from "@/data/whatsOnSoon";
 import { cheapestDeals } from "@/data/cheapestDeals";
 import BuildQueryCard from "./components/BuildQueryCard";
 import Navbar from "./components/Navbar";
+import { parseUserQuery } from "./lib/search/parseUserQuery";
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -30,7 +31,12 @@ export default function Home() {
   function submitSearch() {
     if (!query.trim()) return;
 
-    router.push(`/results?query=${encodeURIComponent(query)}`);
+    const parsed = parseUserQuery(query);
+
+    // temporary: just to see it working
+    console.log("PARSED QUERY (home):", parsed);
+
+    router.push(`/results?query=${encodeURIComponent(parsed.raw)}`);
   }
 
   const textHeroSub = "text-base md:text-lg text-gray-700";

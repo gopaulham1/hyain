@@ -8,6 +8,7 @@ import Link from "next/link";
 import BuildQueryCard from "../components/BuildQueryCard";
 import ResultsSidebar from "../components/results/ResultsSidebar";
 import Navbar from "../components/Navbar";
+import { parseUserQuery } from "../lib/search/parseUserQuery";
 
 const MONTHS: Record<string, number> = {
   january: 0,
@@ -111,6 +112,11 @@ type SortTab = "best" | "cheapest" | "fastest";
 export default function ResultsPage() {
   const searchParams = useSearchParams();
   const query = searchParams.get("query") || "";
+
+  const parsed = parseUserQuery(query);
+
+  // temporary debug
+  console.log("PARSED QUERY (results):", parsed);
 
   const router = useRouter();
   function extractFromTo(q: string): { from?: string; to?: string } {
