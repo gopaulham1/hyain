@@ -9,6 +9,7 @@ import BuildQueryCard from "../components/BuildQueryCard";
 import ResultsSidebar from "../components/results/ResultsSidebar";
 import Navbar from "../components/Navbar";
 import { parseUserQuery } from "../lib/search/parseUserQuery";
+import { buildResultsUrl } from "../lib/search/buildQueryString";
 
 const MONTHS: Record<string, number> = {
   january: 0,
@@ -78,6 +79,48 @@ function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
   return null;
 }
 
+function getDateRangeFromIntent(
+  intent: ReturnType<typeof parseUserQuery>["dateIntent"],
+): { start: Date; end: Date } | null {
+  const now = new Date();
+
+  if (intent === "next_week") {
+    const start = new Date(now);
+    const end = new Date(now);
+    end.setDate(end.getDate() + 7);
+    return { start, end };
+  }
+
+  if (intent === "next_month") {
+    const start = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      1,
+      0,
+      0,
+      0,
+      0,
+    );
+    const end = new Date(now.getFullYear(), now.getMonth() + 2, 1, 0, 0, 0, 0);
+    return { start, end };
+  }
+
+  if (intent === "this_weekend") {
+    // Next Saturday 00:00 -> Monday 00:00
+    const start = new Date(now);
+    const day = start.getDay(); // Sun=0
+    const daysUntilSat = (6 - day + 7) % 7;
+    start.setDate(start.getDate() + daysUntilSat);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(start);
+    end.setDate(end.getDate() + 2);
+    return { start, end };
+  }
+
+  return null;
+}
+
 function flightInRange(
   departureTimeISO: string,
   range: { start: Date; end: Date },
@@ -111,9 +154,43 @@ type SortTab = "best" | "cheapest" | "fastest";
 
 export default function ResultsPage() {
   const searchParams = useSearchParams();
-  const query = searchParams.get("query") || "";
+  // Prefer structured params, but keep `query` for backwards compatibility.
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
+  const whenParam = searchParams.get("when");
+  const paxParam = searchParams.get("pax");
+  const tripParam = searchParams.get("trip");
+  const cabinParam = searchParams.get("cabin");
 
-  const parsed = parseUserQuery(query);
+  // Build a readable query string for display + API (until API supports structured params)
+  const query = useMemo(() => {
+    const fallback = searchParams.get("query") ?? "";
+    const parts: string[] = [];
+
+    if (fromParam && toParam) parts.push(`${fromParam} to ${toParam}`);
+    else if (fromParam) parts.push(`from ${fromParam}`);
+    else if (toParam) parts.push(`to ${toParam}`);
+
+    if (whenParam) parts.push(whenParam.replace(/_/g, " "));
+    if (paxParam) parts.push(`for ${paxParam}`);
+    if (tripParam === "return") parts.push("return");
+    if (cabinParam) parts.push(cabinParam);
+
+    const built = parts.join(" ").trim();
+
+    // ✅ ALWAYS prefer the raw query from the URL if it exists
+    return (fallback.trim() ? fallback : built) ?? "";
+  }, [
+    fromParam,
+    toParam,
+    whenParam,
+    paxParam,
+    tripParam,
+    cabinParam,
+    searchParams,
+  ]);
+
+  const parsed = useMemo(() => parseUserQuery(query), [query]);
 
   // temporary debug
   console.log("PARSED QUERY (results):", parsed);
@@ -139,12 +216,12 @@ export default function ResultsPage() {
   const route = useMemo(() => extractFromTo(query), [query]);
 
   // This is what the input shows (so user can edit + search again)
-  const [queryInput, setQueryInput] = useState(query);
+  const [queryInput, setQueryInput] = useState<string>("");
 
   // Keep input in sync when URL query changes (e.g. back/forward)
-  useEffect(() => {
-    setQueryInput(query);
-  }, [query]);
+  // useEffect(() => {
+  //   setQueryInput(query);
+  // }, [query]);
 
   // Builder state (same as home)
   const [from, setFrom] = useState("London");
@@ -165,7 +242,8 @@ export default function ResultsPage() {
 
   function submitSearch() {
     if (!queryInput.trim()) return;
-    router.push(`/results?query=${encodeURIComponent(queryInput)}`);
+    const nextParsed = parseUserQuery(queryInput);
+    router.push(buildResultsUrl(nextParsed));
   }
 
   const [loading, setLoading] = useState(true);
@@ -203,7 +281,8 @@ export default function ResultsPage() {
     let cloned = [...allResults];
 
     // ✅ DATE FILTER (next week / next month / March etc.)
-    const range = getDateRangeFromQuery(query);
+    const range =
+      getDateRangeFromIntent(parsed.dateIntent) ?? getDateRangeFromQuery(query);
     if (range) {
       cloned = cloned.filter((f) => flightInRange(f.departureTime, range));
     }
@@ -294,6 +373,35 @@ export default function ResultsPage() {
                       >
                         Search
                       </button>
+                    </div>
+                  </div>
+                  {/* Interpreted as (under search bar, above pills) */}
+                  <div className="mt-3">
+                    <div className="inline-flex flex-wrap items-center gap-2 rounded-xl bg-white/60 px-3 py-2 text-sm backdrop-blur">
+                      <span className="text-gray-600">Interpreted as:</span>
+
+                      <span className="font-semibold text-gray-900">
+                        {(parsed.from || "Anywhere") +
+                          " → " +
+                          (parsed.to || "Anywhere")}
+                      </span>
+
+                      {parsed.dateIntent && (
+                        <span className="text-gray-800">
+                          · {parsed.dateIntent.replace(/_/g, " ")}
+                        </span>
+                      )}
+
+                      {parsed.passengers && (
+                        <span className="text-gray-800">
+                          · {parsed.passengers} traveler
+                          {parsed.passengers === 1 ? "" : "s"}
+                        </span>
+                      )}
+
+                      {parsed.tripType === "return" && (
+                        <span className="text-gray-800">· return</span>
+                      )}
                     </div>
                   </div>
                 </div>

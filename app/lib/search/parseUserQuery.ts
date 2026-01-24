@@ -28,20 +28,95 @@ function detectDateIntent(text: string): DateIntent {
 }
 
 function extractFromTo(text: string): { from: string | null; to: string | null } {
-  // handles: "london to paris", "from london to paris", "london -> paris"
-  const t = text.toLowerCase();
+  // Goal:
+  // - avoid parsing "i want to go" as "i want -> go"
+  // - prefer "from X" even if destination is vague ("somewhere", "anywhere")
+  // - keep parsing simple + deterministic
 
-  const arrow = t.match(/\b(.+?)\s*(?:->|→)\s*(.+?)\b/);
-  if (arrow) return { from: arrow[1].trim(), to: arrow[2].trim() };
+  let t = text.toLowerCase().trim();
 
-  const fromTo = t.match(/\bfrom\s+(.+?)\s+to\s+(.+?)\b/);
-  if (fromTo) return { from: fromTo[1].trim(), to: fromTo[2].trim() };
+  // Remove common filler prefixes that include "to"
+  // so the first "to" isn't treated as route delimiter.
+  t = t.replace(
+    /^(i\s*)?(want|wanna|would\s+like|looking|need|plan|trying)\s+to\s+/i,
+    ""
+  );
+  t = t.replace(/^(go|travel|fly)\s+to\s+/i, "");
+  t = t.replace(/^book\s+(a\s+)?(flight|flights)\s+(to|for)\s+/i, "");
 
-  const simpleTo = t.match(/\b(.+?)\s+to\s+(.+?)\b/);
-  if (simpleTo) return { from: simpleTo[1].trim(), to: simpleTo[2].trim() };
+  // Helper: clean "place-like" strings
+  const cleanPlace = (s: string) => {
+    const x = s
+      .trim()
+      // cut trailing punctuation
+      .replace(/[.,!?]+$/g, "")
+      // collapse spaces
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (!x) return null;
+
+    // treat vague destinations as "Anywhere"
+    if (["anywhere", "somewhere", "any place", "anyplace"].includes(x)) return null;
+
+    // don't allow single filler words as places
+    if (["go", "travel", "fly"].includes(x)) return null;
+
+    return x;
+  };
+
+  // 1) Arrow form: "london -> paris"
+  const arrow = t.match(/\b(.+?)\s*(?:->|→)\s*(.+?)(?=$|\s)/);
+  if (arrow) return { from: cleanPlace(arrow[1]) , to: cleanPlace(arrow[2]) };
+
+  // 2) Strong form: "from london to paris"
+  const fromTo = t.match(/\bfrom\s+(.+?)\s+to\s+(.+?)(?=$|\s)/);
+  if (fromTo) return { from: cleanPlace(fromTo[1]), to: cleanPlace(fromTo[2]) };
+
+  // 3) "from X" alone (very common): "… from london"
+  // 3) Simple form first: "london to paris"
+  // Stop destination capture before time/constraint words ("next", "month", etc.)
+  const simpleTo = t.match(
+    /\b(.+?)\s+to\s+(.+?)(?=\s+\b(from|next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct)\b|$)/
+  );
+
+  if (simpleTo) {
+    const left = cleanPlace(simpleTo[1]);
+    const right = cleanPlace(simpleTo[2]);
+
+    // Guard: block bad left phrases
+    const badLeft = ["i want", "want", "wanna", "would like", "looking", "need"];
+    if (left && badLeft.some((p) => left.startsWith(p))) {
+      return { from: null, to: right };
+    }
+
+    // If left looks like a real origin, prefer it
+    if (left || right) return { from: left, to: right };
+  }
+
+  // 4) "from X" alone
+  const fromOnly = t.match(
+    /\bfrom\s+(.+?)(?=\s+\b(next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct)\b|$)/
+  );
+
+  // 5) "to Y" alone
+  // Only treat as destination-only if the phrase starts with "to ..."
+  // This prevents "london to paris" being treated as just "to paris".
+  const toOnly = t.trim().startsWith("to ")
+    ? t.match(
+        /\bto\s+(.+?)(?=\s+\b(from|next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct)\b|$)/
+      )
+    : null;
+
+  const from = fromOnly ? cleanPlace(fromOnly[1]) : null;
+  const to = toOnly ? cleanPlace(toOnly[1]) : null;
+
+  if (from || to) return { from, to };
 
   return { from: null, to: null };
+
 }
+
 
 export function parseUserQuery(input: string): ParsedQuery {
   const raw = input;
