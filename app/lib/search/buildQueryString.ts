@@ -7,15 +7,6 @@ export function buildResultsUrl(parsed: ParsedQuery) {
 
   if (parsed.from) params.set("from", parsed.from);
   if (parsed.to) params.set("to", parsed.to);
-  if (parsed.departDateISO) params.set("depart", parsed.departDateISO);
-  if (parsed.returnDateISO) params.set("return", parsed.returnDateISO);
-
-  if (parsed.availability?.kind === "only_weekends") {
-    params.set("only", "weekends");
-  } else if (parsed.availability?.kind === "only_weekday") {
-    params.set("only", String(parsed.availability.weekday)); // 0..6
-  }
-
   if (parsed.dateIntent) params.set("when", parsed.dateIntent);
   if (parsed.passengers) params.set("pax", String(parsed.passengers));
   if (parsed.tripType) params.set("trip", parsed.tripType);
@@ -33,9 +24,10 @@ export function buildResultsUrl(parsed: ParsedQuery) {
   if (parsed.tripType === "return") parts.push("return");
   if (parsed.cabin) parts.push(parsed.cabin);
 
-  // Always preserve exactly what the user typed
-  const raw = parsed.raw.trim();
-  params.set("query", raw || parts.join(" ").trim());
+// Always preserve exactly what the user typed
+const raw = parsed.raw.trim();
+if (raw) params.set("query", raw);
+
 
   return `/results?${params.toString()}`;
 }

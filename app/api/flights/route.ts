@@ -43,7 +43,7 @@ function parsePlaceConstraint(raw?: string): PlaceConstraint {
 
   // "anywhere in X"
   const m = v.match(
-    /^(?:anywhere|somewhere|any place|any city|any country)\s+(?:in|within)\s+(.+)$/,
+    /^(?:anywhere|somewhere|any place|any city|any country)\s+(?:in|within)\s+(.+)$/
   );
   if (m) {
     const key = cleanPlace(m[1]);
@@ -92,271 +92,196 @@ function parseDuration(duration: string): number {
   return hours * 60 + mins;
 }
 
+
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const rawQuery = (searchParams.get("query") || "").trim().toLowerCase();
-  let dateIntent: "today" | "tomorrow" | "next_week" | "weekend" | null = null;
+const { searchParams } = new URL(request.url);
+const rawQuery = (searchParams.get("query") || "").trim().toLowerCase();
+let dateIntent: "today" | "tomorrow" | "next_week" | "weekend" | null = null;
 
-  let sortIntent: "cheapest" | "fastest" | "direct" | "balanced" = "balanced";
+let sortIntent: "cheapest" | "fastest" | "direct" | "balanced" = "balanced";
 
-  if (
-    rawQuery.includes("cheap") ||
-    rawQuery.includes("cheapest") ||
-    rawQuery.includes("lowest")
-  ) {
-    sortIntent = "cheapest";
-  } else if (
-    rawQuery.includes("fast") ||
-    rawQuery.includes("quick") ||
-    rawQuery.includes("shortest")
-  ) {
-    sortIntent = "fastest";
-  } else if (
-    rawQuery.includes("direct") ||
-    rawQuery.includes("nonstop") ||
-    rawQuery.includes("non-stop")
-  ) {
-    sortIntent = "direct";
-  }
+if (rawQuery.includes("cheap") || rawQuery.includes("cheapest") || rawQuery.includes("lowest")) {
+  sortIntent = "cheapest";
+} else if (rawQuery.includes("fast") || rawQuery.includes("quick") || rawQuery.includes("shortest")) {
+  sortIntent = "fastest";
+} else if (rawQuery.includes("direct") || rawQuery.includes("nonstop") || rawQuery.includes("non-stop")) {
+  sortIntent = "direct";
+}
 
-  const stopWords = new Set([
-    "today",
-    "tomorrow",
-    "next",
-    "week",
-    "this",
-    "weekend",
-    "from",
-    "to",
-    "flights",
-    "flight",
-  ]);
 
-  const tokens = rawQuery
-    .split(/\s+/)
-    .map((w) => w.trim())
-    .filter((w) => w.length > 2 && !stopWords.has(w));
+const stopWords = new Set([
+  "today",
+  "tomorrow",
+  "next",
+  "week",
+  "this",
+  "weekend",
+  "from",
+  "to",
+  "flights",
+  "flight",
+]);
+
+const tokens = rawQuery
+  .split(/\s+/)
+  .map((w) => w.trim())
+  .filter((w) => w.length > 2 && !stopWords.has(w));
 
   const norm = (s: string) => s.trim().toLowerCase();
 
-  // We match per-field, not "anywhere in the whole string"
-  const fieldContains = (field: string, wanted: string) =>
-    norm(field).includes(norm(wanted));
+// We match per-field, not "anywhere in the whole string"
+const fieldContains = (field: string, wanted: string) =>
+  norm(field).includes(norm(wanted));
 
-  // Extract "from X to Y" OR fallback "X to Y"
-  function parseFromTo(q: string): { from?: string; to?: string } | null {
-    // "from X to Y"
-    const both = q.match(/\bfrom\s+(.+?)\s+to\s+(.+?)\b/i);
-    if (both) return { from: both[1].trim(), to: both[2].trim() };
+// Extract "from X to Y" OR fallback "X to Y"
+function parseFromTo(q: string): { from?: string; to?: string } | null {
+  // "from X to Y"
+  const both = q.match(/\bfrom\s+(.+?)\s+to\s+(.+?)\b/i);
+  if (both) return { from: both[1].trim(), to: both[2].trim() };
 
-    // "from X"
-    const onlyFrom = q.match(/\bfrom\s+(.+?)\b/i);
-    if (onlyFrom) return { from: onlyFrom[1].trim() };
-
+  // "from X"
+  const onlyFrom = q.match(/\bfrom\s+(.+?)\b/i);
+  if (onlyFrom) return { from: onlyFrom[1].trim() };
+  
     // "X to Y"
-    const short = q.match(/\b(.+?)\s+to\s+(.+?)\b/i);
-    if (short) return { from: short[1].trim(), to: short[2].trim() };
+  const short = q.match(/\b(.+?)\s+to\s+(.+?)\b/i);
+  if (short) return { from: short[1].trim(), to: short[2].trim() };
 
-    // "to Y"
-    const onlyTo = q.match(/\bto\s+(.+?)\b/i);
-    if (onlyTo) return { to: onlyTo[1].trim() };
+  // "to Y"
+  const onlyTo = q.match(/\bto\s+(.+?)\b/i);
+  if (onlyTo) return { to: onlyTo[1].trim() };
 
-    return null;
-  }
+  return null;
+}
 
-  if (rawQuery.includes("today")) dateIntent = "today";
-  else if (rawQuery.includes("tomorrow")) dateIntent = "tomorrow";
-  else if (rawQuery.includes("next week")) dateIntent = "next_week";
-  else if (rawQuery.includes("this weekend")) dateIntent = "weekend";
+
+
+
+if (rawQuery.includes("today")) dateIntent = "today";
+else if (rawQuery.includes("tomorrow")) dateIntent = "tomorrow";
+else if (rawQuery.includes("next week")) dateIntent = "next_week";
+else if (rawQuery.includes("this weekend")) dateIntent = "weekend";
+
+
 
   // if no query, return everything
-  if (!rawQuery) {
-    const cloned = mockResults.map((f) => ({ ...f }));
+if (!rawQuery) {
+  const cloned = mockResults.map((f) => ({ ...f }));
 
-    if (cloned.length > 0) {
-      cloned[0].tag = "BEST";
-      cloned[0].note = "Best overall option";
-    }
-
-    return Response.json(cloned);
+  if (cloned.length > 0) {
+    cloned[0].tag = "BEST";
+    cloned[0].note = "Best overall option";
   }
 
-  const route = parseFromTo(rawQuery);
+  return Response.json(cloned);
+}
 
-  const filtered = mockResults.filter((flight) => {
-    // No route intent → fallback to fuzzy search
-    if (!route) {
-      const haystack =
-        `${flight.airline} ${flight.from} ${flight.to}`.toLowerCase();
-      if (tokens.length === 0) return true;
-      return tokens.some((token) => haystack.includes(token));
-    }
 
-    // Treat missing from/to as "Anywhere"
-    const wantsFrom = typeof route.from === "string";
-    const wantsTo = typeof route.to === "string";
+const route = parseFromTo(rawQuery);
 
-    const fromConstraint = parsePlaceConstraint(route.from);
-    const toConstraint = parsePlaceConstraint(route.to);
+const filtered = mockResults.filter((flight) => {
+  // No route intent → fallback to fuzzy search
+  if (!route) {
+    const haystack = `${flight.airline} ${flight.from} ${flight.to}`.toLowerCase();
+    if (tokens.length === 0) return true;
+    return tokens.some((token) => haystack.includes(token));
+  }
 
-    const fromOk = matchesConstraint(flight.from, fromConstraint);
-    const toOk = matchesConstraint(flight.to, toConstraint);
+  // Treat missing from/to as "Anywhere"
+  const wantsFrom = typeof route.from === "string";
+  const wantsTo = typeof route.to === "string";
 
-    return fromOk && toOk;
+const fromConstraint = parsePlaceConstraint(route.from);
+const toConstraint = parsePlaceConstraint(route.to);
+
+const fromOk = matchesConstraint(flight.from, fromConstraint);
+const toOk = matchesConstraint(flight.to, toConstraint);
+
+return fromOk && toOk;
+
+});
+
+
+
+const ranked = filtered
+  .map((f) => ({ ...f })) // ✅ clone objects so tagging is safe
+  .sort((a, b) => {
+
+  // Intent-based ordering
+  if (sortIntent === "fastest") {
+    const durDiff = parseDuration(a.duration) - parseDuration(b.duration);
+    if (durDiff !== 0) return durDiff;
+
+    const stopsDiff = parseStops(a.stops) - parseStops(b.stops);
+    if (stopsDiff !== 0) return stopsDiff;
+
+    return parsePrice(a.price) - parsePrice(b.price);
+  }
+
+  if (sortIntent === "direct") {
+    const stopsDiff = parseStops(a.stops) - parseStops(b.stops);
+    if (stopsDiff !== 0) return stopsDiff;
+
+    const durDiff = parseDuration(a.duration) - parseDuration(b.duration);
+    if (durDiff !== 0) return durDiff;
+
+    return parsePrice(a.price) - parsePrice(b.price);
+  }
+
+  if (sortIntent === "cheapest") {
+    const priceDiff = parsePrice(a.price) - parsePrice(b.price);
+    if (priceDiff !== 0) return priceDiff;
+
+    const stopsDiff = parseStops(a.stops) - parseStops(b.stops);
+    if (stopsDiff !== 0) return stopsDiff;
+
+    return parseDuration(a.duration) - parseDuration(b.duration);
+  }
+
+  // balanced (your original)
+  const priceDiff = parsePrice(a.price) - parsePrice(b.price);
+  if (priceDiff !== 0) return priceDiff;
+
+  const stopsDiff = parseStops(a.stops) - parseStops(b.stops);
+  if (stopsDiff !== 0) return stopsDiff;
+
+  return parseDuration(a.duration) - parseDuration(b.duration);
+});
+
+// ✅ Add tags/notes so the UI can explain "why this result"
+if (ranked.length > 0) {
+  // reset notes if you want
+  ranked.forEach((f) => {
+    f.tag = undefined;
+    // keep your original note as fallback
   });
 
-  const ranked = filtered
-    .map((f) => ({ ...f })) // ✅ clone objects so tagging is safe
-    .sort((a, b) => {
-      // Intent-based ordering
-      if (sortIntent === "fastest") {
-        const durDiff = parseDuration(a.duration) - parseDuration(b.duration);
-        if (durDiff !== 0) return durDiff;
+  // choose “winner” based on intent
+  const best = ranked[0];
 
-        const stopsDiff = parseStops(a.stops) - parseStops(b.stops);
-        if (stopsDiff !== 0) return stopsDiff;
-
-        return parsePrice(a.price) - parsePrice(b.price);
-      }
-
-      if (sortIntent === "direct") {
-        const stopsDiff = parseStops(a.stops) - parseStops(b.stops);
-        if (stopsDiff !== 0) return stopsDiff;
-
-        const durDiff = parseDuration(a.duration) - parseDuration(b.duration);
-        if (durDiff !== 0) return durDiff;
-
-        return parsePrice(a.price) - parsePrice(b.price);
-      }
-
-      if (sortIntent === "cheapest") {
-        const priceDiff = parsePrice(a.price) - parsePrice(b.price);
-        if (priceDiff !== 0) return priceDiff;
-
-        const stopsDiff = parseStops(a.stops) - parseStops(b.stops);
-        if (stopsDiff !== 0) return stopsDiff;
-
-        return parseDuration(a.duration) - parseDuration(b.duration);
-      }
-
-      // balanced (your original)
-      const priceDiff = parsePrice(a.price) - parsePrice(b.price);
-      if (priceDiff !== 0) return priceDiff;
-
-      const stopsDiff = parseStops(a.stops) - parseStops(b.stops);
-      if (stopsDiff !== 0) return stopsDiff;
-
-      return parseDuration(a.duration) - parseDuration(b.duration);
-    });
-
-  // ✅ Add tags/notes so the UI can explain "why this result"
-  if (ranked.length > 0) {
-    // reset notes if you want
-    ranked.forEach((f) => {
-      f.tag = undefined;
-      // keep your original note as fallback
-    });
-
-    // choose “winner” based on intent
-    const best = ranked[0];
-
-    if (sortIntent === "cheapest") {
-      best.tag = "CHEAPEST";
-      best.note = "Cheapest option for your search";
-    } else if (sortIntent === "fastest") {
-      best.tag = "FASTEST";
-      best.note = "Fastest option for your search";
-    } else if (sortIntent === "direct") {
-      best.tag = "DIRECT";
-      best.note = "Best direct option for your search";
-    } else {
-      best.tag = "BEST";
-      best.note = "Best overall balance (price + time + convenience)";
-    }
+  if (sortIntent === "cheapest") {
+    best.tag = "CHEAPEST";
+    best.note = "Cheapest option for your search";
+  } else if (sortIntent === "fastest") {
+    best.tag = "FASTEST";
+    best.note = "Fastest option for your search";
+  } else if (sortIntent === "direct") {
+    best.tag = "DIRECT";
+    best.note = "Best direct option for your search";
+  } else {
+    best.tag = "BEST";
+    best.note = "Best overall balance (price + time + convenience)";
   }
-
-  // (optional) log it for debugging
-  console.log({ dateIntent, sortIntent });
-
-  console.log(dateIntent);
-  // --- Date shifting for mock results (so "next weekend" isn't stuck in March) ---
-  const depart = searchParams.get("depart"); // YYYY-MM-DD
-  const ret = searchParams.get("return"); // YYYY-MM-DD (optional)
-  const when = searchParams.get("when"); // e.g. next_weekend / month / today
-
-  function setDateKeepingTime(isoDate: string, dateTime: string) {
-    const time = dateTime.split("T")[1] ?? "09:00:00";
-    return `${isoDate}T${time}`;
-  }
-
-  function addDaysISO(iso: string, days: number) {
-    const d = new Date(iso + "T00:00:00Z");
-    d.setUTCDate(d.getUTCDate() + days);
-    return d.toISOString().slice(0, 10);
-  }
-
-  function todayISO() {
-    const d = new Date();
-    const utc = new Date(
-      Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()),
-    );
-    return utc.toISOString().slice(0, 10);
-  }
-
-  function nextWeekendStartISO() {
-    // Fri as start
-    const d = new Date();
-    const day = d.getDay(); // 0 Sun..6 Sat
-    // days until Friday (5)
-    let diff = (5 - day + 7) % 7;
-    if (diff === 0) diff = 7; // if it's already Fri, use next Fri
-    const start = new Date();
-    start.setDate(start.getDate() + diff);
-    const utc = new Date(
-      Date.UTC(start.getFullYear(), start.getMonth(), start.getDate()),
-    );
-    return utc.toISOString().slice(0, 10);
-  }
-
-  let baseDepartISO: string | null = depart;
-
-  // If no explicit depart param, approximate from `when`
-  if (!baseDepartISO && when) {
-    if (when === "today") baseDepartISO = todayISO();
-    if (when === "tomorrow") baseDepartISO = addDaysISO(todayISO(), 1);
-    if (when === "next_weekend") baseDepartISO = nextWeekendStartISO();
-    if (when === "this_weekend") baseDepartISO = nextWeekendStartISO(); // simple fallback
-    if (when === "next_week") baseDepartISO = addDaysISO(todayISO(), 7);
-    if (when === "this_week") baseDepartISO = todayISO();
-    if (when === "month") baseDepartISO = todayISO(); // if month, we keep dates near now unless you pass depart=
-  }
-
-  // Shift all mock flights onto the requested depart window
-  if (baseDepartISO) {
-    const spreadDays =
-      baseDepartISO && ret
-        ? Math.max(
-            0,
-            Math.round(
-              (new Date(ret + "T00:00:00Z").getTime() -
-                new Date(baseDepartISO + "T00:00:00Z").getTime()) /
-                (1000 * 60 * 60 * 24),
-            ),
-          )
-        : 0;
-
-    for (let i = 0; i < ranked.length; i++) {
-      const offset = spreadDays > 0 ? i % (spreadDays + 1) : 0;
-      const iso = addDaysISO(baseDepartISO, offset);
-
-      ranked[i] = {
-        ...ranked[i],
-        departureTime: setDateKeepingTime(iso, ranked[i].departureTime),
-        arrivalTime: setDateKeepingTime(iso, ranked[i].arrivalTime),
-      };
-    }
-  }
-  // --- end date shifting ---
-
-  return Response.json(ranked);
 }
+
+// (optional) log it for debugging
+console.log({ dateIntent, sortIntent });
+
+
+
+console.log(dateIntent);
+
+return Response.json(ranked);
+
+}
+
