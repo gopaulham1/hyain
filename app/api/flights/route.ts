@@ -1,6 +1,67 @@
 import type { Flight } from "@/types/flight";
 import { mockResults } from "@/data/mockResults";
 
+type PlaceConstraint =
+  | { kind: "any" }
+  | { kind: "text"; text: string }
+  | { kind: "set"; set: string[] };
+
+const ANYWHERE_TERMS = new Set([
+  "anywhere",
+  "somewhere",
+  "any place",
+  "anyplace",
+  "any city",
+  "any country",
+  "wherever",
+]);
+
+const GROUPS: Record<string, string[]> = {
+  europe: ["london", "paris", "milan", "barcelona"],
+  asia: ["tokyo", "dubai", "india", "china"],
+  usa: ["new york", "los angeles", "miami", "chicago"],
+
+  // countries
+  france: ["paris", "nice", "lyon", "marseille"],
+  spain: ["barcelona", "madrid", "valencia"],
+};
+
+function cleanPlace(raw: string) {
+  return raw
+    .toLowerCase()
+    .replace(/[.,!?]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parsePlaceConstraint(raw?: string): PlaceConstraint {
+  if (!raw) return { kind: "any" };
+
+  const v = cleanPlace(raw);
+
+  if (ANYWHERE_TERMS.has(v)) return { kind: "any" };
+
+  // "anywhere in X"
+  const m = v.match(
+    /^(?:anywhere|somewhere|any place|any city|any country)\s+(?:in|within)\s+(.+)$/
+  );
+  if (m) {
+    const key = cleanPlace(m[1]);
+    if (GROUPS[key]) return { kind: "set", set: GROUPS[key] };
+    return { kind: "text", text: key };
+  }
+
+  if (GROUPS[v]) return { kind: "set", set: GROUPS[v] };
+
+  return { kind: "text", text: v };
+}
+
+function matchesConstraint(field: string, c: PlaceConstraint) {
+  const f = cleanPlace(field);
+  if (c.kind === "any") return true;
+  if (c.kind === "text") return f.includes(c.text);
+  return c.set.some((x) => f.includes(x));
+}
 
 function parsePrice(price: string): number {
   // "£79" → 79
@@ -130,15 +191,14 @@ const filtered = mockResults.filter((flight) => {
   const wantsFrom = typeof route.from === "string";
   const wantsTo = typeof route.to === "string";
 
-  const fromOk = wantsFrom
-    ? fieldContains(flight.from, route.from!)
-    : true;
+const fromConstraint = parsePlaceConstraint(route.from);
+const toConstraint = parsePlaceConstraint(route.to);
 
-  const toOk = wantsTo
-    ? fieldContains(flight.to, route.to!)
-    : true;
+const fromOk = matchesConstraint(flight.from, fromConstraint);
+const toOk = matchesConstraint(flight.to, toConstraint);
 
-  return fromOk && toOk;
+return fromOk && toOk;
+
 });
 
 

@@ -57,7 +57,22 @@ function extractFromTo(text: string): { from: string | null; to: string | null }
     if (!x) return null;
 
     // treat vague destinations as "Anywhere"
-    if (["anywhere", "somewhere", "any place", "anyplace"].includes(x)) return null;
+const lowered = x.toLowerCase();
+
+// keep "anywhere in france / europe"
+if (
+  lowered.startsWith("anywhere in ") ||
+  lowered.startsWith("somewhere in ") ||
+  lowered.startsWith("any place in ")
+) {
+  return x;
+}
+
+// pure vague → means no constraint
+if (["anywhere", "somewhere", "any place", "anyplace"].includes(lowered)) {
+  return null;
+}
+
 
     // don't allow single filler words as places
     if (["go", "travel", "fly"].includes(x)) return null;
