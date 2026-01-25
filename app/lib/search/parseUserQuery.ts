@@ -1,4 +1,6 @@
-import type { ParsedQuery, DateIntent } from "./types";
+import type { ParsedQuery } from "./types";
+import { parseWhen } from "./parseWhen";
+import { parseAvailability } from "./parseAvailability";
 
 function normalize(input: string) {
   return input.trim().replace(/\s+/g, " ");
@@ -16,18 +18,10 @@ function detectPassengers(text: string): number | null {
   return Number.isFinite(n) && n > 0 && n < 20 ? n : null;
 }
 
-function detectDateIntent(text: string): DateIntent {
-  const t = text.toLowerCase();
-
-  if (t.includes("flexible") || t.includes("anytime")) return "flexible";
-  if (t.includes("next week")) return "next_week";
-  if (t.includes("next month")) return "next_month";
-  if (t.includes("this weekend") || t.includes("weekend")) return "this_weekend";
-
-  return null;
-}
-
-function extractFromTo(text: string): { from: string | null; to: string | null } {
+function extractFromTo(text: string): {
+  from: string | null;
+  to: string | null;
+} {
   // Goal:
   // - avoid parsing "i want to go" as "i want -> go"
   // - prefer "from X" even if destination is vague ("somewhere", "anywhere")
@@ -39,7 +33,7 @@ function extractFromTo(text: string): { from: string | null; to: string | null }
   // so the first "to" isn't treated as route delimiter.
   t = t.replace(
     /^(i\s*)?(want|wanna|would\s+like|looking|need|plan|trying)\s+to\s+/i,
-    ""
+    "",
   );
   t = t.replace(/^(go|travel|fly)\s+to\s+/i, "");
   t = t.replace(/^book\s+(a\s+)?(flight|flights)\s+(to|for)\s+/i, "");
@@ -57,22 +51,21 @@ function extractFromTo(text: string): { from: string | null; to: string | null }
     if (!x) return null;
 
     // treat vague destinations as "Anywhere"
-const lowered = x.toLowerCase();
+    const lowered = x.toLowerCase();
 
-// keep "anywhere in france / europe"
-if (
-  lowered.startsWith("anywhere in ") ||
-  lowered.startsWith("somewhere in ") ||
-  lowered.startsWith("any place in ")
-) {
-  return x;
-}
+    // keep "anywhere in france / europe"
+    if (
+      lowered.startsWith("anywhere in ") ||
+      lowered.startsWith("somewhere in ") ||
+      lowered.startsWith("any place in ")
+    ) {
+      return x;
+    }
 
-// pure vague → means no constraint
-if (["anywhere", "somewhere", "any place", "anyplace"].includes(lowered)) {
-  return null;
-}
-
+    // pure vague → means no constraint
+    if (["anywhere", "somewhere", "any place", "anyplace"].includes(lowered)) {
+      return null;
+    }
 
     // don't allow single filler words as places
     if (["go", "travel", "fly"].includes(x)) return null;
@@ -82,7 +75,7 @@ if (["anywhere", "somewhere", "any place", "anyplace"].includes(lowered)) {
 
   // 1) Arrow form: "london -> paris"
   const arrow = t.match(/\b(.+?)\s*(?:->|→)\s*(.+?)(?=$|\s)/);
-  if (arrow) return { from: cleanPlace(arrow[1]) , to: cleanPlace(arrow[2]) };
+  if (arrow) return { from: cleanPlace(arrow[1]), to: cleanPlace(arrow[2]) };
 
   // 2) Strong form: "from london to paris"
   const fromTo = t.match(/\bfrom\s+(.+?)\s+to\s+(.+?)(?=$|\s)/);
@@ -92,7 +85,7 @@ if (["anywhere", "somewhere", "any place", "anyplace"].includes(lowered)) {
   // 3) Simple form first: "london to paris"
   // Stop destination capture before time/constraint words ("next", "month", etc.)
   const simpleTo = t.match(
-    /\b(.+?)\s+to\s+(.+?)(?=\s+\b(from|next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct)\b|$)/
+    /\b(.+?)\s+to\s+(.+?)(?=\s+\b(from|next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct)\b|$)/,
   );
 
   if (simpleTo) {
@@ -100,7 +93,14 @@ if (["anywhere", "somewhere", "any place", "anyplace"].includes(lowered)) {
     const right = cleanPlace(simpleTo[2]);
 
     // Guard: block bad left phrases
-    const badLeft = ["i want", "want", "wanna", "would like", "looking", "need"];
+    const badLeft = [
+      "i want",
+      "want",
+      "wanna",
+      "would like",
+      "looking",
+      "need",
+    ];
     if (left && badLeft.some((p) => left.startsWith(p))) {
       return { from: null, to: right };
     }
@@ -111,7 +111,7 @@ if (["anywhere", "somewhere", "any place", "anyplace"].includes(lowered)) {
 
   // 4) "from X" alone
   const fromOnly = t.match(
-    /\bfrom\s+(.+?)(?=\s+\b(next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct)\b|$)/
+    /\bfrom\s+(.+?)(?=\s+\b(next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct)\b|$)/,
   );
 
   // 5) "to Y" alone
@@ -119,7 +119,7 @@ if (["anywhere", "somewhere", "any place", "anyplace"].includes(lowered)) {
   // This prevents "london to paris" being treated as just "to paris".
   const toOnly = t.trim().startsWith("to ")
     ? t.match(
-        /\bto\s+(.+?)(?=\s+\b(from|next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct)\b|$)/
+        /\bto\s+(.+?)(?=\s+\b(from|next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct)\b|$)/,
       )
     : null;
 
@@ -129,9 +129,7 @@ if (["anywhere", "somewhere", "any place", "anyplace"].includes(lowered)) {
   if (from || to) return { from, to };
 
   return { from: null, to: null };
-
 }
-
 
 export function parseUserQuery(input: string): ParsedQuery {
   const raw = input;
@@ -140,7 +138,6 @@ export function parseUserQuery(input: string): ParsedQuery {
   const { from, to } = extractFromTo(normalized);
 
   const passengers = detectPassengers(normalized);
-  const dateIntent = detectDateIntent(normalized);
 
   const tripType =
     normalized.toLowerCase().includes("return") ||
@@ -149,9 +146,12 @@ export function parseUserQuery(input: string): ParsedQuery {
       ? "return"
       : "oneway";
 
-  // v1: we’re not resolving exact dates yet; just intent
-  const departDateISO = null;
-  const returnDateISO = null;
+  const whenParsed = parseWhen(normalized);
+  const dateIntent = whenParsed?.dateIntent ?? null;
+  const departDateISO = whenParsed?.departDateISO ?? null;
+  const returnDateISO = whenParsed?.returnDateISO ?? null;
+  const whenText = whenParsed?.rawMatch ?? null;
+  const availability = parseAvailability(normalized);
 
   // confidence heuristic (v1)
   let confidence = 0.2;
@@ -170,6 +170,7 @@ export function parseUserQuery(input: string): ParsedQuery {
     tripType,
     passengers,
     cabin: null,
+    availability,
     confidence: Math.min(1, confidence),
   };
 }
