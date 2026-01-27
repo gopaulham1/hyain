@@ -29,6 +29,10 @@ const MONTHS: Record<string, number> = {
 function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
   const query = q.toLowerCase();
 
+  // ✅ A) Relative single-day
+  const hasToday = /\btoday\b/.test(query);
+  const hasTomorrow = /\btomorrow\b/.test(query);
+
   // You can expand these phrases later
   const hasNextWeek = /\bnext\s+week\b/.test(query);
   const hasNextMonth = /\bnext\s+month\b/.test(query);
@@ -39,6 +43,27 @@ function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
   );
 
   const now = new Date();
+
+  // Helpers (midnight boundaries)
+  const startOfDay = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+
+  // 0) today = today 00:00 -> tomorrow 00:00
+  if (hasToday) {
+    const start = startOfDay(now);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return { start, end };
+  }
+
+  // 0b) tomorrow = tomorrow 00:00 -> day after 00:00
+  if (hasTomorrow) {
+    const start = startOfDay(now);
+    start.setDate(start.getDate() + 1);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+    return { start, end };
+  }
 
   // 1) next week = now -> now + 7 days (rolling)
   if (hasNextWeek) {
