@@ -231,6 +231,37 @@ function parseDuration(duration: string): number {
   return hours * 60 + mins;
 }
 
+type DayFilter = "weekend" | "weekday";
+
+function getDayFilterFromQuery(q: string): DayFilter | null {
+  const s = q.toLowerCase();
+
+  // Weekend-only phrases
+  const wantsWeekend =
+    /\b(only\s+)?weekends?\b/.test(s) ||
+    /\bweekend\s+only\b/.test(s) ||
+    /\bonly\s+weekend\b/.test(s);
+
+  // Weekday-only phrases
+  const wantsWeekday =
+    /\b(only\s+)?weekdays?\b/.test(s) ||
+    /\bweekday\s+only\b/.test(s) ||
+    /\bonly\s+weekday\b/.test(s);
+
+  // If both appear, don't apply any filter (avoid weird conflicts)
+  if (wantsWeekend && wantsWeekday) return null;
+
+  if (wantsWeekend) return "weekend";
+  if (wantsWeekday) return "weekday";
+  return null;
+}
+
+function isWeekendISO(departureTimeISO: string) {
+  const d = new Date(departureTimeISO);
+  const day = d.getDay(); // Sun=0 ... Sat=6
+  return day === 0 || day === 6;
+}
+
 type SortTab = "best" | "cheapest" | "fastest";
 
 export default function ResultsPage() {
@@ -366,6 +397,15 @@ export default function ResultsPage() {
       getDateRangeFromIntent(parsed.dateIntent) ?? getDateRangeFromQuery(query);
     if (range) {
       cloned = cloned.filter((f) => flightInRange(f.departureTime, range));
+    }
+
+    // Day filter (weekend-only / weekday-only)
+    const dayFilter = getDayFilterFromQuery(query);
+    if (dayFilter) {
+      cloned = cloned.filter((f) => {
+        const weekend = isWeekendISO(f.departureTime);
+        return dayFilter === "weekend" ? weekend : !weekend;
+      });
     }
 
     if (tab === "cheapest") {
