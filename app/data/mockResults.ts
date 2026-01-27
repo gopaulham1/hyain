@@ -15,6 +15,111 @@ export const mockResults: Flight[] = [
     scoreNote: "Good price and perfect timing",
   },
   {
+    airline: "Ryanair",
+    from: "London",
+    to: "Rome",
+    price: "£29",
+    duration: "2h 35m",
+    departureTime: "2026-01-30T19:40", // Friday
+    arrivalTime: "2026-01-30T23:15",
+    stops: "Direct",
+    note: "Late Friday getaway",
+    tag: "BEST",
+    scoreNote: "Perfect for weekend trips",
+  },
+
+  // Saturday morning
+  {
+    airline: "easyJet",
+    from: "London",
+    to: "Barcelona",
+    price: "£45",
+    duration: "2h 10m",
+    departureTime: "2026-01-31T08:10", // Saturday
+    arrivalTime: "2026-01-31T11:20",
+    stops: "Direct",
+    note: "Classic weekend flight",
+    tag: "BEST",
+    scoreNote: "Great timing for a short break",
+  },
+
+  // Sunday afternoon
+  {
+    airline: "Vueling",
+    from: "London",
+    to: "Madrid",
+    price: "£52",
+    duration: "2h 25m",
+    departureTime: "2026-02-01T15:30", // Sunday
+    arrivalTime: "2026-02-01T18:55",
+    stops: "Direct",
+    note: "Relaxed Sunday departure",
+    tag: "FASTEST",
+    scoreNote: "Nice Sunday timing",
+  },
+
+  // Monday morning (should NOT appear for weekend)
+  {
+    airline: "British Airways",
+    from: "London",
+    to: "Berlin",
+    price: "£89",
+    duration: "1h 55m",
+    departureTime: "2026-02-02T07:10", // Monday
+    arrivalTime: "2026-02-02T10:05",
+    stops: "Direct",
+    note: "Business-style departure",
+    tag: "FASTEST",
+    scoreNote: "Early weekday flight",
+  },
+
+  // ---------------- NEXT WEEKEND ----------------
+
+  // Next Friday night
+  {
+    airline: "Wizz Air",
+    from: "London",
+    to: "Budapest",
+    price: "£34",
+    duration: "2h 40m",
+    departureTime: "2026-02-06T20:20", // Next Friday
+    arrivalTime: "2026-02-07T00:00",
+    stops: "Direct",
+    note: "Cheap next-weekend escape",
+    tag: "CHEAPEST",
+    scoreNote: "Excellent value",
+  },
+
+  // Next Saturday
+  {
+    airline: "Lufthansa",
+    from: "London",
+    to: "Munich",
+    price: "£110",
+    duration: "1h 55m",
+    departureTime: "2026-02-07T09:00", // Next Saturday
+    arrivalTime: "2026-02-07T12:00",
+    stops: "Direct",
+    note: "Comfortable weekend travel",
+    tag: "BEST",
+    scoreNote: "Premium feel",
+  },
+
+  // Next Sunday
+  {
+    airline: "KLM",
+    from: "London",
+    to: "Amsterdam",
+    price: "£65",
+    duration: "1h 10m",
+    departureTime: "2026-02-08T14:45", // Next Sunday
+    arrivalTime: "2026-02-08T17:00",
+    stops: "Direct",
+    note: "Short hop home",
+    tag: "FASTEST",
+    scoreNote: "Easy return flight",
+  },
+  {
     airline: "easyJet",
     from: "London",
     to: "Paris",
