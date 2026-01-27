@@ -17,11 +17,12 @@ export type ParsedQuery = {
   to: string | null;
 
   dateIntent: DateIntent;
-  departDateISO: string | null;  // YYYY-MM-DD if you can resolve it
+  departDateISO: string | null; // YYYY-MM-DD if you can resolve it
   returnDateISO: string | null;
 
   tripType: TripType;
   passengers: number | null;
+  budget: { max: number; currency: "GBP" } | null;
   cabin: Cabin;
 
   confidence: number; // 0..1 (super useful later)

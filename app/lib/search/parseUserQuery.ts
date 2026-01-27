@@ -35,6 +35,29 @@ function detectPassengers(text: string): number | null {
   return null;
 }
 
+function detectBudget(text: string): {
+  max: number;
+  currency: "GBP";
+} | null {
+  const t = text.toLowerCase();
+
+  // under / below / less than £X
+  const underMatch =
+    t.match(/\b(under|below|less\s+than)\s*£?\s*(\d+)\b/) ||
+    t.match(/\b£\s*(\d+)\b/) ||
+    t.match(/\b(\d+)\s*(pounds|quid)\b/);
+
+  if (!underMatch) return null;
+
+  const amount = Number(underMatch[2] ?? underMatch[1]);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+
+  return {
+    max: amount,
+    currency: "GBP",
+  };
+}
+
 function extractFromTo(text: string): {
   from: string | null;
   to: string | null;
@@ -147,6 +170,7 @@ export function parseUserQuery(input: string): ParsedQuery {
   const normalized = normalize(input);
   const { from, to } = extractFromTo(normalized);
   const passengers = detectPassengers(normalized);
+  const budget = detectBudget(normalized);
 
   const tripType =
     normalized.toLowerCase().includes("return") ||
@@ -175,6 +199,7 @@ export function parseUserQuery(input: string): ParsedQuery {
     returnDateISO,
     tripType,
     passengers,
+    budget,
     cabin: null,
     confidence: Math.min(1, confidence),
   };

@@ -408,6 +408,14 @@ export default function ResultsPage() {
       });
     }
 
+    // 💰 Budget filter (hard max)
+    if (parsed.budget?.max != null) {
+      cloned = cloned.filter((f) => {
+        const priceNum = parsePrice(f.price);
+        return Number.isFinite(priceNum) && priceNum <= parsed.budget!.max;
+      });
+    }
+
     if (tab === "cheapest") {
       cloned.sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
       return cloned;
