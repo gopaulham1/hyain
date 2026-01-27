@@ -36,6 +36,8 @@ function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
   const hasThisWeekend = /\bthis\s+weekend\b/.test(query);
   const hasNextWeekend = /\bnext\s+weekend\b/.test(query);
 
+  const hasThisWeek = /\bthis\s+week\b/.test(query);
+
   // You can expand these phrases later
   const hasNextWeek = /\bnext\s+week\b/.test(query);
   const hasNextMonth = /\bnext\s+month\b/.test(query);
@@ -92,11 +94,27 @@ function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
     return { start, end };
   }
 
-  // 1) next week = now -> now + 7 days (rolling)
+  // C) this week = today 00:00 -> next Monday 00:00
+  if (hasThisWeek) {
+    const start = startOfDay(now);
+
+    const end = new Date(start);
+    const day = end.getDay(); // Sun=0
+    const daysUntilNextMonday = (8 - day) % 7 || 7;
+    end.setDate(end.getDate() + daysUntilNextMonday);
+
+    return { start, end };
+  }
+
+  // C) next week = next Monday 00:00 -> Monday after that 00:00
   if (hasNextWeek) {
-    const start = new Date(now);
-    const end = new Date(now);
+    const start = startOfDay(now);
+    const day = start.getDay(); // Sun=0
+    const daysUntilNextMonday = (8 - day) % 7 || 7;
+    start.setDate(start.getDate() + daysUntilNextMonday);
+    const end = new Date(start);
     end.setDate(end.getDate() + 7);
+
     return { start, end };
   }
 
