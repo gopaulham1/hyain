@@ -5,36 +5,50 @@ function normalize(input: string) {
 }
 
 function detectPassengers(text: string): number | null {
-  // "for 2", "2 people", "x2"
+  // A) Explicit numeric cases (highest priority)
   const m =
+    text.match(/\bfamily\s+of\s+(\d+)\b/i) ||
     text.match(/\bfor\s+(\d+)\b/i) ||
     text.match(/\b(\d+)\s+(people|pax|passengers|travellers|travelers)\b/i) ||
     text.match(/\bx(\d+)\b/i);
 
-  if (!m) return null;
-  const n = Number(m[1]);
-  return Number.isFinite(n) && n > 0 && n < 20 ? n : null;
+  if (m) {
+    const n = Number(m[1]);
+    if (Number.isFinite(n) && n > 0 && n < 20) {
+      return n;
+    }
+  }
+
+  // B) Implicit group phrases (minimum guaranteed = 2)
+  const implicitGroupPatterns = [
+    /\bme\s+and\s+my\s+(wife|husband|partner)\b/i,
+    /\bme\s+and\s+my\s+kids?\b/i,
+    /\bwe\b/i,
+    /\bfamily\b/i,
+  ];
+
+  if (implicitGroupPatterns.some((r) => r.test(text))) {
+    return 2;
+  }
+
+  // C) No signal
+  return null;
 }
 
 function extractFromTo(text: string): {
   from: string | null;
   to: string | null;
 } {
-  // Goal:
-  // - avoid parsing "i want to go" as "i want -> go"
-  // - prefer "from X" even if destination is vague ("somewhere", "anywhere")
-  // - keep parsing simple + deterministic
-
   let t = text.toLowerCase().trim();
 
-  // Remove common filler prefixes that include "to"
-  // so the first "to" isn't treated as route delimiter.
   t = t.replace(
     /^(i\s*)?(want|wanna|would\s+like|looking|need|plan|trying)\s+to\s+/i,
     "",
   );
   t = t.replace(/^(go|travel|fly)\s+to\s+/i, "");
   t = t.replace(/^book\s+(a\s+)?(flight|flights)\s+(to|for)\s+/i, "");
+
+  // I am gay....not really
 
   // Helper: clean "place-like" strings
   const cleanPlace = (s: string) => {
@@ -79,7 +93,6 @@ function extractFromTo(text: string): {
   const fromTo = t.match(/\bfrom\s+(.+?)\s+to\s+(.+?)(?=$|\s)/);
   if (fromTo) return { from: cleanPlace(fromTo[1]), to: cleanPlace(fromTo[2]) };
 
-  // 3) "from X" alone (very common): "… from london"
   // 3) Simple form first: "london to paris"
   // Stop destination capture before time/constraint words ("next", "month", etc.)
   const simpleTo = t.match(
@@ -132,9 +145,7 @@ function extractFromTo(text: string): {
 export function parseUserQuery(input: string): ParsedQuery {
   const raw = input;
   const normalized = normalize(input);
-
   const { from, to } = extractFromTo(normalized);
-
   const passengers = detectPassengers(normalized);
 
   const tripType =
@@ -147,7 +158,6 @@ export function parseUserQuery(input: string): ParsedQuery {
   const dateIntent = null;
   const departDateISO = null;
   const returnDateISO = null;
-  const whenText = null;
 
   // confidence heuristic (v1)
   let confidence = 0.2;
