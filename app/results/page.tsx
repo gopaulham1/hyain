@@ -328,12 +328,12 @@ export default function ResultsPage() {
   const route = useMemo(() => extractFromTo(query), [query]);
 
   // This is what the input shows (so user can edit + search again)
-  const [queryInput, setQueryInput] = useState<string>("");
+  const [queryInput, setQueryInput] = useState<string>(query);
 
   // Keep input in sync when URL query changes (e.g. back/forward)
-  // useEffect(() => {
-  //   setQueryInput(query);
-  // }, [query]);
+  useEffect(() => {
+    setQueryInput(query);
+  }, [query]);
 
   // Builder state (same as home)
   const [from, setFrom] = useState("London");
