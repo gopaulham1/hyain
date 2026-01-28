@@ -365,9 +365,25 @@ export default function ResultsPage() {
 
   // Choose ONE date label to display (priority: human label > intent)
   const dateLabel = useMemo(() => {
-    if (relativeDateLabel) return relativeDateLabel;
-    if (parsed.dateIntent) return parsed.dateIntent.replace(/_/g, " ");
-    if (monthLabel) return `in ${monthLabel}`;
+    if (relativeDateLabel) {
+      return relativeDateLabel
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+    }
+
+    if (parsed.dateIntent) {
+      return parsed.dateIntent
+        .replace(/_/g, " ")
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+    }
+
+    if (monthLabel) {
+      return monthLabel; // ✅ no "in"
+    }
+
     return null;
   }, [relativeDateLabel, parsed.dateIntent, monthLabel]);
 
@@ -384,19 +400,27 @@ export default function ResultsPage() {
           .replace(/\b(only\s+)?weekdays?\b/gi, "")
           .replace(/\bweekend\s+only\b/gi, "")
           .replace(/\bweekday\s+only\b/gi, "")
+
           // remove common time words
           .replace(/\b(today|tomorrow)\b/gi, "")
           .replace(/\b(this|next)\s+week(end)?\b/gi, "")
           .replace(/\bnext\s+month\b/gi, "")
+
           // remove budget bits
           .replace(/\bunder\s*£?\s*\d+\b/gi, "")
           .replace(/\bunder\s+\d+\s*(quid|pounds?)\b/gi, "")
+
           // remove pax bits
           .replace(/\bfor\s+\d+\b/gi, "")
           .replace(
             /\b\d+\s*(people|pax|passengers|travellers|travelers)\b/gi,
             "",
           )
+
+          // remove lonely leftovers
+          .replace(/\bonly\b/gi, "")
+          .replace(/\b(pounds?|quid)\b/gi, "")
+
           // tidy
           .replace(/\s+/g, " ")
           .trim()
@@ -416,24 +440,6 @@ export default function ResultsPage() {
   console.log("PARSED QUERY (results):", parsed);
 
   const router = useRouter();
-  function extractFromTo(q: string): { from?: string; to?: string } {
-    const lower = q.toLowerCase();
-
-    // "flights from X to Y" OR "from X to Y"
-    const m1 = lower.match(/\bfrom\s+(.+?)\s+to\s+(.+?)(?:\s|$)/i);
-    if (m1) return { from: m1[1].trim(), to: m1[2].trim() };
-
-    // "X to Y"
-    const m2 = lower.match(/\b(.+?)\s+to\s+(.+?)(?:\s|$)/i);
-    if (m2) return { from: m2[1].trim(), to: m2[2].trim() };
-
-    // only "to Y"
-    const m3 = lower.match(/\bto\s+(.+?)(?:\s|$)/i);
-    if (m3) return { to: m3[1].trim() };
-
-    return {};
-  }
-  const route = useMemo(() => extractFromTo(query), [query]);
 
   // This is what the input shows (so user can edit + search again)
   const [queryInput, setQueryInput] = useState<string>(query);
@@ -442,6 +448,20 @@ export default function ResultsPage() {
   useEffect(() => {
     setQueryInput(query);
   }, [query]);
+
+  useEffect(() => {
+    // ✅ sync builder from the SAME cleaned values used in "Interpreted as"
+    setFrom(displayRoute.from);
+    setTo(displayRoute.to);
+
+    // ✅ WHEN
+    if (dateLabel) setWhen(dateLabel);
+    else setWhen("Any time");
+
+    // ✅ WHO
+    const pax = parsed.passengers ?? 1;
+    setWho(`${pax} traveler${pax === 1 ? "" : "s"}`);
+  }, [displayRoute, dateLabel, parsed.passengers]);
 
   // Builder state (same as home)
   const [from, setFrom] = useState("London");
