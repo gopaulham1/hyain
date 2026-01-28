@@ -125,7 +125,7 @@ export default function BuildQueryCard({
           <div className="relative">
             <button
               type="button"
-              className="w-full rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
+              className="w-full min-h-[88px] flex flex-col justify-center rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
               onClick={() => {
                 setFromOpen((v) => {
                   const next = !v;
@@ -138,9 +138,22 @@ export default function BuildQueryCard({
                 });
               }}
             >
-              <div className="text-[11px] text-gray-600">Where from?</div>
-              <div className="text-sm font-semibold text-gray-900">
-                {from} <span className="text-gray-500 font-normal">(Any)</span>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/icons/flight-dep.svg"
+                  alt=""
+                  className="h-6 w-6 opacity-70"
+                  aria-hidden="true"
+                />
+
+                <div>
+                  <div className="text-xs text-gray-600">Where from?</div>
+
+                  <div className="text-base font-semibold text-gray-900">
+                    {from}{" "}
+                    <span className="text-gray-500 font-normal">(Any)</span>
+                  </div>
+                </div>
               </div>
             </button>
 
@@ -184,7 +197,7 @@ export default function BuildQueryCard({
                     <div className="flex items-center justify-between px-4 pt-4 pb-2">
                       <button
                         type="button"
-                        className="text-sm font-semibold text-gray-700 hover:text-gray-900 transition"
+                        className="text-base font-semibold text-gray-700 hover:text-gray-900 transition"
                         onClick={() => {
                           setFromStage("region");
                           setFromRegion(null);
@@ -193,7 +206,7 @@ export default function BuildQueryCard({
                         ← Back
                       </button>
 
-                      <div className="text-sm font-semibold text-gray-900">
+                      <div className="text-base font-semibold text-gray-900">
                         {fromRegion}
                       </div>
 
@@ -227,7 +240,7 @@ export default function BuildQueryCard({
           <div className="relative">
             <button
               type="button"
-              className="w-full rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
+              className="w-full min-h-[88px] flex flex-col justify-center rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
               onClick={() => {
                 setToOpen((v) => {
                   const next = !v;
@@ -240,8 +253,22 @@ export default function BuildQueryCard({
                 });
               }}
             >
-              <div className="text-[11px] text-gray-600">Where to?</div>
-              <div className="text-sm font-semibold text-gray-900">{to}</div>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/icons/flight-4.svg"
+                  alt=""
+                  className="h-6 w-6 opacity-70"
+                  aria-hidden="true"
+                />
+
+                <div>
+                  <div className="text-xs text-gray-600">Where to?</div>
+
+                  <div className="text-base font-semibold text-gray-900">
+                    {to}
+                  </div>
+                </div>
+              </div>
             </button>
 
             {toOpen && (
@@ -283,7 +310,7 @@ export default function BuildQueryCard({
                     <div className="flex items-center justify-between px-4 pt-4 pb-2">
                       <button
                         type="button"
-                        className="text-sm font-semibold text-gray-700 hover:text-gray-900 transition"
+                        className="text-base font-semibold text-gray-700 hover:text-gray-900 transition"
                         onClick={() => {
                           setToStage("region");
                           setToRegion(null);
@@ -292,7 +319,7 @@ export default function BuildQueryCard({
                         ← Back
                       </button>
 
-                      <div className="text-sm font-semibold text-gray-900">
+                      <div className="text-base font-semibold text-gray-900">
                         {toRegion}
                       </div>
 
@@ -331,12 +358,26 @@ export default function BuildQueryCard({
           <div className="relative">
             <button
               type="button"
-              className="w-full rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
+              className="w-full min-h-[88px] flex flex-col justify-center rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
               onClick={() => setWhenOpen((v) => !v)}
             >
-              <div className="text-[11px] text-gray-600">When?</div>
-              <div className="text-sm font-semibold text-gray-900">{when}</div>
-              <div className="text-xs text-gray-500">
+              <div className="flex items-center gap-3">
+                <img
+                  src="/icons/calendar-3.svg"
+                  alt=""
+                  className="h-6 w-6 opacity-70"
+                  aria-hidden="true"
+                />
+
+                <div>
+                  <div className="text-xs text-gray-600">When?</div>
+                  <div className="text-base font-semibold text-gray-900">
+                    {when}
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-sm text-gray-500">
                 Flexible dates get cheaper flights
               </div>
             </button>
@@ -365,11 +406,24 @@ export default function BuildQueryCard({
           <div className="relative">
             <button
               type="button"
-              className="w-full rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
+              className="w-full min-h-[88px] flex flex-col justify-center rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
               onClick={() => setWhoOpen((v) => !v)}
             >
-              <div className="text-[11px] text-gray-600">Who?</div>
-              <div className="text-sm font-semibold text-gray-900">{who}</div>
+              <div className="flex items-center gap-3">
+                <img
+                  src="/icons/person-2.svg"
+                  alt=""
+                  className="h-6 w-6 opacity-70"
+                  aria-hidden="true"
+                />
+
+                <div>
+                  <div className="text-xs text-gray-600">Who?</div>
+                  <div className="text-base font-semibold text-gray-900">
+                    {who}
+                  </div>
+                </div>
+              </div>
             </button>
 
             {whoOpen && (
