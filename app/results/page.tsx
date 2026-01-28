@@ -4,7 +4,6 @@ import type { Flight } from "../types/flight";
 import FlightCard from "../components/FlightCard";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import BuildQueryCard from "../components/BuildQueryCard";
 import ResultsSidebar from "../components/results/ResultsSidebar";
 import Navbar from "../components/Navbar";
@@ -36,6 +35,32 @@ const MONTHS: Record<string, number> = {
   dec: 11,
   december: 11,
 };
+
+const MONTH_LABELS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+function getMonthLabelFromQuery(q: string): string | null {
+  const s = q.toLowerCase();
+
+  // find month token used in the query ("mar", "march", etc.)
+  const key = Object.keys(MONTHS).find((m) => new RegExp(`\\b${m}\\b`).test(s));
+  if (!key) return null;
+
+  const idx = MONTHS[key];
+  return MONTH_LABELS[idx] ?? null;
+}
 
 function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
   const query = q.toLowerCase();
@@ -158,6 +183,33 @@ function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
   }
 
   return null;
+}
+
+function getRelativeDateLabelFromQuery(q: string): string | null {
+  const s = q.toLowerCase();
+
+  if (/\btoday\b/.test(s)) return "today";
+  if (/\btomorrow\b/.test(s)) return "tomorrow";
+
+  if (/\bthis\s+weekend\b/.test(s)) return "this weekend";
+  if (/\bnext\s+weekend\b/.test(s)) return "next weekend";
+
+  if (/\bthis\s+week\b/.test(s)) return "this week";
+  if (/\bnext\s+week\b/.test(s)) return "next week";
+
+  if (/\bnext\s+month\b/.test(s)) return "next month";
+
+  return null;
+}
+
+function titleCasePlace(name: string) {
+  if (!name) return name;
+  if (name.toLowerCase() === "anywhere") return "Anywhere";
+
+  return name
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 }
 
 function getDateRangeFromIntent(
@@ -303,6 +355,62 @@ export default function ResultsPage() {
   ]);
 
   const parsed = useMemo(() => parseUserQuery(query), [query]);
+  const monthLabel = useMemo(() => getMonthLabelFromQuery(query), [query]);
+  const relativeDateLabel = useMemo(
+    () => getRelativeDateLabelFromQuery(query),
+    [query],
+  );
+
+  const dayFilter = useMemo(() => getDayFilterFromQuery(query), [query]);
+
+  // Choose ONE date label to display (priority: human label > intent)
+  const dateLabel = useMemo(() => {
+    if (relativeDateLabel) return relativeDateLabel;
+    if (parsed.dateIntent) return parsed.dateIntent.replace(/_/g, " ");
+    if (monthLabel) return `in ${monthLabel}`;
+    return null;
+  }, [relativeDateLabel, parsed.dateIntent, monthLabel]);
+
+  // Clean “to” / “from” for display so words like “only weekends” don’t attach to the city
+  const displayRoute = useMemo(() => {
+    const rawFrom = parsed.from ?? "Anywhere";
+    const rawTo = parsed.to ?? "Anywhere";
+
+    const cleanPlace = (s: string) => {
+      return (
+        s
+          // remove day filters
+          .replace(/\b(only\s+)?weekends?\b/gi, "")
+          .replace(/\b(only\s+)?weekdays?\b/gi, "")
+          .replace(/\bweekend\s+only\b/gi, "")
+          .replace(/\bweekday\s+only\b/gi, "")
+          // remove common time words
+          .replace(/\b(today|tomorrow)\b/gi, "")
+          .replace(/\b(this|next)\s+week(end)?\b/gi, "")
+          .replace(/\bnext\s+month\b/gi, "")
+          // remove budget bits
+          .replace(/\bunder\s*£?\s*\d+\b/gi, "")
+          .replace(/\bunder\s+\d+\s*(quid|pounds?)\b/gi, "")
+          // remove pax bits
+          .replace(/\bfor\s+\d+\b/gi, "")
+          .replace(
+            /\b\d+\s*(people|pax|passengers|travellers|travelers)\b/gi,
+            "",
+          )
+          // tidy
+          .replace(/\s+/g, " ")
+          .trim()
+      );
+    };
+
+    const from = cleanPlace(rawFrom) || "Anywhere";
+    const to = cleanPlace(rawTo) || "Anywhere";
+
+    return {
+      from: titleCasePlace(from),
+      to: titleCasePlace(to),
+    };
+  }, [parsed.from, parsed.to]);
 
   // temporary debug
   console.log("PARSED QUERY (results):", parsed);
@@ -354,7 +462,10 @@ export default function ResultsPage() {
 
   function submitSearch() {
     if (!queryInput.trim()) return;
+
     const nextParsed = parseUserQuery(queryInput);
+
+    // ✅ keep the input exactly as user typed
     router.push(buildResultsUrl(nextParsed));
   }
 
@@ -510,18 +621,27 @@ export default function ResultsPage() {
                       <span className="text-gray-600">Interpreted as:</span>
 
                       <span className="font-semibold text-gray-900">
-                        {(parsed.from || "Anywhere") +
-                          " → " +
-                          (parsed.to || "Anywhere")}
+                        {displayRoute.from} → {displayRoute.to}
                       </span>
 
-                      {parsed.dateIntent && (
+                      {dateLabel && (
+                        <span className="text-gray-800">· {dateLabel}</span>
+                      )}
+
+                      {dayFilter === "weekend" && (
+                        <span className="text-gray-800">· weekends only</span>
+                      )}
+                      {dayFilter === "weekday" && (
+                        <span className="text-gray-800">· weekdays only</span>
+                      )}
+
+                      {parsed.budget?.max != null && (
                         <span className="text-gray-800">
-                          · {parsed.dateIntent.replace(/_/g, " ")}
+                          · under £{parsed.budget.max}
                         </span>
                       )}
 
-                      {parsed.passengers && (
+                      {parsed.passengers != null && (
                         <span className="text-gray-800">
                           · {parsed.passengers} traveler
                           {parsed.passengers === 1 ? "" : "s"}
