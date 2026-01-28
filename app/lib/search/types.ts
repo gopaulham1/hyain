@@ -24,6 +24,7 @@ export type ParsedQuery = {
   passengers: number | null;
   budget: { max: number; currency: "GBP" } | null;
   cabin: Cabin;
+  vibes: string[];
 
   confidence: number; // 0..1 (super useful later)
 };

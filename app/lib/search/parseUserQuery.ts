@@ -165,12 +165,69 @@ function extractFromTo(text: string): {
   return { from: null, to: null };
 }
 
+type VibeKey = "warm" | "beach" | "skiing" | "citybreak" | "nature";
+
+const VIBE_PATTERNS: Array<{ key: VibeKey; patterns: RegExp[] }> = [
+  {
+    key: "warm",
+    patterns: [
+      /\b(warm|hot|sunny|heat)\b/i,
+      /\b(somewhere|anywhere)\s+(warm|hot|sunny)\b/i,
+      /\b(to|with|for)\s+(somewhere|anywhere)\s+(warm|hot|sunny)\b/i,
+    ],
+  },
+  {
+    key: "beach",
+    patterns: [
+      /\b(beach|seaside|coast)\b/i,
+      /\b(with|for)\s+(a\s+)?(beach|seaside|coast)\b/i,
+      /\b(anywhere|somewhere)\s+(that\s+)?(has|with)\s+(a\s+)?(beach|seaside|coast)\b/i,
+    ],
+  },
+  {
+    key: "skiing",
+    patterns: [
+      /\b(ski|skiing|snow)\b/i,
+      /\b(good\s+for|for)\s+ski(ing)?\b/i,
+      /\b(somewhere|anywhere)\s+to\s+ski\b/i,
+    ],
+  },
+  {
+    key: "citybreak",
+    patterns: [
+      /\bcity\s*break\b/i,
+      /\b(weekend|short)\s*break\b/i,
+      /\bfor\s+(a\s+)?(city\s*break|weekend\s*break|short\s*break)\b/i,
+    ],
+  },
+  {
+    key: "nature",
+    patterns: [
+      /\b(nature|mountains?|hiking|lakes?|forest)\b/i,
+      /\b(with|for)\s+nature\b/i,
+      /\b(anywhere|somewhere)\s+(that\s+)?(has|with)\s+nature\b/i,
+    ],
+  },
+];
+
+function detectVibes(text: string): VibeKey[] {
+  const hits: VibeKey[] = [];
+  for (const vibe of VIBE_PATTERNS) {
+    if (vibe.patterns.some((r) => r.test(text))) {
+      hits.push(vibe.key);
+    }
+  }
+  // keep it simple: max 2 vibes
+  return hits.slice(0, 2);
+}
+
 export function parseUserQuery(input: string): ParsedQuery {
   const raw = input;
   const normalized = normalize(input);
   const { from, to } = extractFromTo(normalized);
   const passengers = detectPassengers(normalized);
   const budget = detectBudget(normalized);
+  const vibes = detectVibes(normalized);
 
   const tripType =
     normalized.toLowerCase().includes("return") ||
@@ -194,6 +251,7 @@ export function parseUserQuery(input: string): ParsedQuery {
     raw,
     from,
     to,
+    vibes,
     dateIntent,
     departDateISO,
     returnDateISO,
