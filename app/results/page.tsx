@@ -202,6 +202,31 @@ function getRelativeDateLabelFromQuery(q: string): string | null {
   return null;
 }
 
+function vibeLabel(v: string) {
+  switch (v) {
+    case "warm":
+      return "Warm";
+    case "beach":
+      return "Beach";
+    case "skiing":
+      return "Skiing";
+    case "citybreak":
+      return "City break";
+    case "nature":
+      return "Nature";
+    default:
+      return v;
+  }
+}
+
+function vibePill(text: string) {
+  return (
+    <span className="rounded-full bg-white/50 border border-black/10 px-2.5 py-1 text-gray-800">
+      {text}
+    </span>
+  );
+}
+
 function titleCasePlace(name: string) {
   if (!name) return name;
   if (name.toLowerCase() === "anywhere") return "Anywhere";
@@ -643,6 +668,16 @@ export default function ResultsPage() {
                       <span className="font-semibold text-gray-900">
                         {displayRoute.from} → {displayRoute.to}
                       </span>
+
+                      {parsed.vibes?.length > 0 && (
+                        <>
+                          <span className="text-gray-800">·</span>
+                          <span className="text-gray-700">Vibe:</span>
+                          {parsed.vibes.map((v) => (
+                            <span key={v}>{vibePill(vibeLabel(v))}</span>
+                          ))}
+                        </>
+                      )}
 
                       {dateLabel && (
                         <span className="text-gray-800">· {dateLabel}</span>
