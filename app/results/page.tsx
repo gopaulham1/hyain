@@ -461,9 +461,6 @@ export default function ResultsPage() {
     };
   }, [parsed.from, parsed.to]);
 
-  // temporary debug
-  console.log("PARSED QUERY (results):", parsed);
-
   const router = useRouter();
 
   // This is what the input shows (so user can edit + search again)

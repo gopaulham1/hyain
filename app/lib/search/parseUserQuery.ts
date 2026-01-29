@@ -221,13 +221,73 @@ function detectVibes(text: string): VibeKey[] {
   return hits.slice(0, 2);
 }
 
+function isVibeOnlyDestination(to: string, vibes: VibeKey[]): boolean {
+  const t = to.toLowerCase().trim();
+  if (!t) return false;
+
+  // If user literally wrote "somewhere/anywhere ..." then it's not a real destination
+  if (t.includes("somewhere") || t.includes("anywhere")) return true;
+
+  // If the "destination" is basically a vibe/activity word, treat as Anywhere
+  const vibeWords = new Set([
+    "warm",
+    "hot",
+    "sunny",
+    "heat",
+    "beach",
+    "seaside",
+    "coast",
+    "sea",
+    "ski",
+    "skiing",
+    "snow",
+    "nature",
+    "mountain",
+    "mountains",
+    "hiking",
+    "lake",
+    "lakes",
+    "forest",
+    "city break",
+    "citybreak",
+    "weekend break",
+    "short break",
+  ]);
+
+  if (vibeWords.has(t)) return true;
+
+  // Stuff like "go skiing"
+  if (t.startsWith("go ") && vibes.length > 0) return true;
+
+  // If we detected a vibe and the 'to' includes obvious vibe phrasing, it's not a city.
+  if (
+    vibes.length > 0 &&
+    (t.includes("with ") ||
+      t.includes("for ") ||
+      t.includes("to ski") ||
+      t.includes("ski") ||
+      t.includes("beach") ||
+      t.includes("warm") ||
+      t.includes("nature") ||
+      t.includes("city break"))
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 export function parseUserQuery(input: string): ParsedQuery {
   const raw = input;
   const normalized = normalize(input);
-  const { from, to } = extractFromTo(normalized);
+  const { from, to: extractedTo } = extractFromTo(normalized);
   const passengers = detectPassengers(normalized);
   const budget = detectBudget(normalized);
   const vibes = detectVibes(normalized);
+  const to =
+    extractedTo && isVibeOnlyDestination(extractedTo, vibes)
+      ? null
+      : extractedTo;
 
   const tripType =
     normalized.toLowerCase().includes("return") ||
