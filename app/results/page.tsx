@@ -291,6 +291,16 @@ function buildSuggestedQuery(
   return `${fromPart}${vibePart}`.replace(/\s+/g, " ").trim();
 }
 
+function stripPassengers(text: string) {
+  return text
+    .replace(
+      /\b\d+\s*(traveler|travellers|travelers|people|pax|passengers)\b/gi,
+      "",
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function vibeLabel(v: string) {
   switch (v) {
     case "warm":
@@ -563,6 +573,11 @@ export default function ResultsPage() {
           .replace(/\b(this|next)\s+week(end)?\b/gi, "")
           .replace(/\bnext\s+month\b/gi, "")
 
+          // remove month names (March, April, etc.)
+          .replace(
+            /\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|jun(e)?|jul(y)?|aug(ust)?|sep(tember)?|oct(ober)?|nov(ember)?|dec(ember)?)\b/gi,
+            "",
+          )
           // remove vibe words/phrases so destination doesn't become "Dubai warm"
           .replace(/\bwarm\b/gi, "")
           .replace(/\bwith\s+a\s+beach\b/gi, "")
@@ -579,7 +594,7 @@ export default function ResultsPage() {
           // remove pax bits
           .replace(/\bfor\s+\d+\b/gi, "")
           .replace(
-            /\b\d+\s*(people|pax|passengers|travellers|travelers)\b/gi,
+            /\b\d+\s*(people|pax|passengers?|travellers?|travelers?)\b/gi,
             "",
           )
 
@@ -636,12 +651,31 @@ export default function ResultsPage() {
   function buildQuery(
     next?: Partial<{ from: string; to: string; when: string; who: string }>,
   ) {
-    const f = next?.from ?? from;
-    const t = next?.to ?? to;
+    const fRaw = next?.from ?? from;
+    const tRaw = next?.to ?? to;
     const w = next?.when ?? when;
     const p = next?.who ?? who;
 
-    return `Flights from ${f} to ${t} ${w} ${p}`.replace(/\s+/g, " ").trim();
+    // 🔒 CRITICAL FIX: strip passengers from places
+    const f = stripPassengers(fRaw);
+    const t = stripPassengers(tRaw);
+
+    // Preserve budget from current input
+    const currentParsed = parseUserQuery(queryInput);
+    const budgetTail =
+      currentParsed.budget?.max != null
+        ? ` under £${currentParsed.budget.max}`
+        : "";
+
+    const routePart =
+      f && f !== "Anywhere" ? `${f} to ${t}` : `Anywhere to ${t}`;
+
+    const whenPart = w && w !== "Any time" ? ` ${w}` : "";
+    const whoPart = p ? ` ${p}` : "";
+
+    return `${routePart}${whenPart}${budgetTail}${whoPart}`
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   function submitSearch() {
