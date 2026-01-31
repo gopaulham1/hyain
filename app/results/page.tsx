@@ -202,6 +202,95 @@ function getRelativeDateLabelFromQuery(q: string): string | null {
   return null;
 }
 
+// --- Vibe -> destination suggestions (v1) ---
+const VIBE_SUGGESTIONS: Record<
+  "warm" | "beach" | "skiing" | "citybreak" | "nature",
+  string[]
+> = {
+  warm: ["Marrakech", "Tenerife", "Dubai", "Athens", "Malta", "Lisbon"],
+  beach: ["Palma", "Tenerife", "Nice", "Split", "Algarve", "Ibiza"],
+  skiing: ["Geneva", "Innsbruck", "Milan", "Sofia", "Salzburg", "Zurich"],
+  citybreak: ["Paris", "Rome", "Barcelona", "Prague", "Amsterdam", "Vienna"],
+  nature: [
+    "Reykjavik",
+    "Bergen",
+    "Madeira",
+    "Edinburgh",
+    "Ljubljana",
+    "Tbilisi",
+  ],
+};
+
+function vibeToQueryPhrase(v: string) {
+  switch (v) {
+    case "warm":
+      return "warm";
+    case "beach":
+      return "with a beach";
+    case "skiing":
+      return "for skiing";
+    case "citybreak":
+      return "for a city break";
+    case "nature":
+      return "with nature";
+    default:
+      return v;
+  }
+}
+
+function replaceDestinationInQuery(
+  rawQuery: string,
+  newDestination: string,
+  currentTo: string | null,
+) {
+  let s = rawQuery.trim();
+  const lower = s.toLowerCase();
+
+  const toLower = (currentTo ?? "").toLowerCase();
+
+  // If we have an exact "to" chunk from parsing, replace that exact chunk.
+  if (currentTo && toLower && lower.includes(toLower)) {
+    const idx = lower.indexOf(toLower);
+    s = s.slice(0, idx) + newDestination + s.slice(idx + currentTo.length);
+  } else {
+    // Replace "to <something>" but STOP when we hit clause words OR vibe words.
+    // This is the key fix that prevents "Dubai warm" or "Dubai somewhere warm in march..." being swallowed.
+    const TO_CLAUSE_BOUNDARY =
+      "(in|on|this|next|today|tomorrow|under|for|with|only|return|weekend|weekends|weekday|weekdays|warm|beach|ski|skiing|nature|city\\s+break)";
+
+    if (/\bto\b/i.test(s)) {
+      s = s.replace(
+        new RegExp(`\\bto\\s+(.+?)(?=\\s+${TO_CLAUSE_BOUNDARY}\\b|$)`, "i"),
+        `to ${newDestination}`,
+      );
+    } else {
+      // No "to ..." at all — remove leading "somewhere/anywhere" then prepend "to Dubai"
+      s = s.replace(/^\s*(somewhere|anywhere)\b\s*/i, "");
+      s = `to ${newDestination} ${s}`.trim();
+    }
+  }
+
+  // If we ended up with "Dubai warm" right next to each other, drop the warm.
+  s = s.replace(
+    new RegExp(`\\b${newDestination}\\s+warm\\b`, "i"),
+    newDestination,
+  );
+
+  return s.replace(/\s+/g, " ").trim();
+}
+
+function buildSuggestedQuery(
+  base: { from: string | null },
+  destination: string,
+  vibe?: string,
+) {
+  const fromPart = base.from
+    ? `${base.from} to ${destination}`
+    : `to ${destination}`;
+  const vibePart = vibe ? ` ${vibeToQueryPhrase(vibe)}` : "";
+  return `${fromPart}${vibePart}`.replace(/\s+/g, " ").trim();
+}
+
 function vibeLabel(v: string) {
   switch (v) {
     case "warm":
@@ -379,7 +468,50 @@ export default function ResultsPage() {
     searchParams,
   ]);
 
+  // Pretty display for the input (doesn't change the actual query used for parsing/fetch)
+  const displayQueryInput = useMemo(() => {
+    const q = (query ?? "").trim();
+
+    // If query starts with "to X" and no explicit "from", show "Anywhere to X"
+    if (/^to\s+\S+/i.test(q) && !/\bfrom\b/i.test(q)) {
+      return `Anywhere ${q}`.replace(/\s+/g, " ").trim();
+    }
+
+    return q;
+  }, [query]);
+
   const parsed = useMemo(() => parseUserQuery(query), [query]);
+
+  // ✅ Discovery mode: if user asked for "somewhere + vibe(s)" but hasn't chosen a destination,
+  // show NO results until they pick a destination (chip click or typing "to X").
+  const hasAnyVibe = (parsed.vibes ?? []).length > 0;
+
+  const hasDestination =
+    !!parsed.to && parsed.to.trim().toLowerCase() !== "anywhere";
+
+  const needsDestinationPick = hasAnyVibe && !hasDestination;
+
+  const suggestions = useMemo(() => {
+    const vibe = parsed.vibes?.[0] as
+      | "warm"
+      | "beach"
+      | "skiing"
+      | "citybreak"
+      | "nature"
+      | undefined;
+
+    if (!vibe) return [];
+
+    // Only suggest if user didn't already pick a real destination
+    // (i.e. destination is null/Anywhere)
+    const toIsAnywhere =
+      !parsed.to || parsed.to.trim().toLowerCase() === "anywhere";
+
+    if (!toIsAnywhere) return [];
+
+    return VIBE_SUGGESTIONS[vibe] ?? [];
+  }, [parsed.to, parsed.vibes]);
+
   const monthLabel = useMemo(() => getMonthLabelFromQuery(query), [query]);
   const relativeDateLabel = useMemo(
     () => getRelativeDateLabelFromQuery(query),
@@ -431,6 +563,15 @@ export default function ResultsPage() {
           .replace(/\b(this|next)\s+week(end)?\b/gi, "")
           .replace(/\bnext\s+month\b/gi, "")
 
+          // remove vibe words/phrases so destination doesn't become "Dubai warm"
+          .replace(/\bwarm\b/gi, "")
+          .replace(/\bwith\s+a\s+beach\b/gi, "")
+          .replace(/\bfor\s+ski(ing)?\b/gi, "")
+          .replace(/\bski(ing)?\b/gi, "")
+          .replace(/\bfor\s+a\s+city\s+break\b/gi, "")
+          .replace(/\bcity\s+break\b/gi, "")
+          .replace(/\bwith\s+nature\b/gi, "")
+
           // remove budget bits
           .replace(/\bunder\s*£?\s*\d+\b/gi, "")
           .replace(/\bunder\s+\d+\s*(quid|pounds?)\b/gi, "")
@@ -448,6 +589,7 @@ export default function ResultsPage() {
 
           // tidy
           .replace(/\s+/g, " ")
+          .replace(/\bto\s+to\b/gi, "to")
           .trim()
       );
     };
@@ -468,8 +610,8 @@ export default function ResultsPage() {
 
   // Keep input in sync when URL query changes (e.g. back/forward)
   useEffect(() => {
-    setQueryInput(query);
-  }, [query]);
+    setQueryInput(displayQueryInput);
+  }, [displayQueryInput]);
 
   useEffect(() => {
     // ✅ sync builder from the SAME cleaned values used in "Interpreted as"
@@ -519,6 +661,14 @@ export default function ResultsPage() {
   const [tab, setTab] = useState<SortTab>("best");
 
   useEffect(() => {
+    // ✅ Don't fetch / show flights until user picks a destination
+    if (needsDestinationPick) {
+      setAllResults([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     async function fetchFlights() {
       try {
         setLoading(true);
@@ -540,7 +690,7 @@ export default function ResultsPage() {
     }
 
     fetchFlights();
-  }, [query]);
+  }, [query, needsDestinationPick]);
 
   const results = useMemo(() => {
     let cloned = [...allResults];
@@ -705,6 +855,60 @@ export default function ResultsPage() {
                       )}
                     </div>
                   </div>
+
+                  {suggestions.length > 0 && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                      <span className="text-gray-600">Try:</span>
+
+                      {suggestions.slice(0, 6).map((dest) => {
+                        const vibe = parsed.vibes?.[0];
+                        const q = buildSuggestedQuery(
+                          { from: parsed.from },
+                          dest,
+                          vibe ?? undefined,
+                        );
+
+                        return (
+                          <button
+                            key={dest}
+                            onClick={() => {
+                              // Use the SAME cleaned value you show in "Interpreted as"
+                              const cleanFrom = displayRoute.from;
+                              const hasRealFrom =
+                                cleanFrom && cleanFrom !== "Anywhere";
+
+                              // Keep budget exactly once (and in a consistent format)
+                              const max = parsed.budget?.max;
+                              const budgetTail =
+                                max != null ? ` under £${max}` : "";
+
+                              // Build query in a safe order: FROM -> TO -> BUDGET
+                              // Preserve month / when (e.g. "March", "Next Month", "Next weekend")
+                              const whenTail = dateLabel ? ` ${dateLabel}` : "";
+
+                              // Build query in a safe order: FROM -> TO -> BUDGET -> WHEN
+                              const nextQuery = hasRealFrom
+                                ? `${cleanFrom} to ${dest}${budgetTail}${whenTail}`
+                                : `to ${dest}${budgetTail}${whenTail}`;
+
+                              // Update UI + BuildQueryCard
+                              setQueryInput(nextQuery);
+                              if (hasRealFrom) setFrom(cleanFrom);
+                              setTo(dest);
+
+                              // Push URL so results + right card update correctly
+                              router.push(
+                                buildResultsUrl(parseUserQuery(nextQuery)),
+                              );
+                            }}
+                            className="rounded-full bg-white/50 border border-black/10 px-3 py-1.5 text-gray-900 hover:bg-white/70 transition"
+                          >
+                            {dest}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* RIGHT SIDE — compact search builder */}
@@ -755,30 +959,47 @@ export default function ResultsPage() {
                   </p>
                 )}
 
+                {needsDestinationPick && (
+                  <div className="mt-6 rounded-2xl border border-black/10 bg-white/40 px-5 py-4 backdrop-blur">
+                    <div className="font-semibold text-gray-900">
+                      Pick a destination 👇
+                    </div>
+                    <div className="text-gray-700 mt-1">
+                      Choose one of the suggestions above (or type a destination
+                      like “to Dubai”).
+                    </div>
+                  </div>
+                )}
+
                 {error && (
                   <p className="mt-6 text-red-600 font-semibold">{error}</p>
                 )}
 
-                {!loading && !error && results.length === 0 && (
-                  <p className="mt-6 text-gray-700">
-                    No flights found. Try different dates or airports.
-                  </p>
-                )}
+                {!needsDestinationPick &&
+                  !loading &&
+                  !error &&
+                  results.length === 0 && (
+                    <p className="mt-6 text-gray-700">
+                      No flights found. Try different dates or airports.
+                    </p>
+                  )}
 
                 {/* Flight list */}
-                <div className="mt-6 space-y-4 max-h-[62vh] overflow-auto pr-2">
-                  {results.map((flight, index) => (
-                    <FlightCard
-                      key={`${flight.airline}-${flight.from}-${flight.to}-${index}`}
-                      flight={flight}
-                      selected={selectedAirline === flight.airline}
-                      onClick={() => setSelectedAirline(flight.airline)}
-                    />
-                  ))}
-                </div>
+                {!needsDestinationPick && (
+                  <div className="mt-6 space-y-4 max-h-[62vh] overflow-auto pr-2">
+                    {results.map((flight, index) => (
+                      <FlightCard
+                        key={`${flight.airline}-${flight.from}-${flight.to}-${index}`}
+                        flight={flight}
+                        selected={selectedAirline === flight.airline}
+                        onClick={() => setSelectedAirline(flight.airline)}
+                      />
+                    ))}
+                  </div>
+                )}
 
                 {/* Footer pill like your mock */}
-                {!loading && results.length > 0 && (
+                {!needsDestinationPick && !loading && results.length > 0 && (
                   <div className="mt-6 flex justify-center">
                     <div className="rounded-full bg-white/35 border border-black/10 px-5 py-2 text-sm md:text-base text-gray-700 backdrop-blur">
                       {results.length} matches · from{" "}
