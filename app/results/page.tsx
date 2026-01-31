@@ -911,19 +911,31 @@ export default function ResultsPage() {
                               const hasRealFrom =
                                 cleanFrom && cleanFrom !== "Anywhere";
 
-                              // Keep budget exactly once (and in a consistent format)
+                              // Keep budget (consistent format)
                               const max = parsed.budget?.max;
                               const budgetTail =
                                 max != null ? ` under £${max}` : "";
 
-                              // Build query in a safe order: FROM -> TO -> BUDGET
                               // Preserve month / when (e.g. "March", "Next Month", "Next weekend")
                               const whenTail = dateLabel ? ` ${dateLabel}` : "";
 
-                              // Build query in a safe order: FROM -> TO -> BUDGET -> WHEN
-                              const nextQuery = hasRealFrom
-                                ? `${cleanFrom} to ${dest}${budgetTail}${whenTail}`
-                                : `to ${dest}${budgetTail}${whenTail}`;
+                              // ✅ Preserve day filters (only weekends / only weekdays)
+                              const dayTail =
+                                dayFilter === "weekend"
+                                  ? " only weekends"
+                                  : dayFilter === "weekday"
+                                    ? " only weekdays"
+                                    : "";
+
+                              // Build query in a safe order: FROM -> TO -> BUDGET -> WHEN -> DAY FILTER
+                              const base = hasRealFrom
+                                ? `${cleanFrom} to ${dest}`
+                                : `to ${dest}`;
+
+                              const nextQuery =
+                                `${base}${budgetTail}${whenTail}${dayTail}`
+                                  .replace(/\s+/g, " ")
+                                  .trim();
 
                               // Update UI + BuildQueryCard
                               setQueryInput(nextQuery);
