@@ -62,6 +62,19 @@ function getMonthLabelFromQuery(q: string): string | null {
   return MONTH_LABELS[idx] ?? null;
 }
 
+function getEndOfMonthLabelFromQuery(q: string): string | null {
+  const s = q.toLowerCase();
+
+  const m = s.match(/\bend\s+of\s+([a-z]+)\b/);
+  if (!m) return null;
+
+  const key = m[1];
+  const idx = MONTHS[key as keyof typeof MONTHS];
+  if (idx == null) return null;
+
+  return `End of ${MONTH_LABELS[idx]}`;
+}
+
 function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
   const query = q.toLowerCase();
 
@@ -169,6 +182,32 @@ function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
     return { start, end };
   }
 
+  // 2.5) end of [month] = 20th -> last day of that month
+  const endOfMonthMatch = query.match(/\bend\s+of\s+([a-z]+)\b/);
+  if (endOfMonthMatch) {
+    const key = endOfMonthMatch[1];
+    const monthIndex = MONTHS[key as keyof typeof MONTHS];
+
+    if (monthIndex != null) {
+      const yearMatch = query.match(/\b(20\d{2})\b/);
+      let year = yearMatch ? Number(yearMatch[1]) : now.getFullYear();
+
+      // end of month boundary
+      const end = new Date(year, monthIndex + 1, 1, 0, 0, 0, 0); // first day of next month 00:00
+      const start = new Date(year, monthIndex, 20, 0, 0, 0, 0); // 20th 00:00
+
+      // If user didn't specify a year and this end-of-month window is already past, bump to next year
+      if (!yearMatch && end.getTime() <= now.getTime()) {
+        year += 1;
+        const end2 = new Date(year, monthIndex + 1, 1, 0, 0, 0, 0);
+        const start2 = new Date(year, monthIndex, 20, 0, 0, 0, 0);
+        return { start: start2, end: end2 };
+      }
+
+      return { start, end };
+    }
+  }
+
   // 3) named month = that calendar month (by default: this year)
   if (monthName) {
     const monthIndex = MONTHS[monthName];
@@ -204,7 +243,7 @@ function getRelativeDateLabelFromQuery(q: string): string | null {
 
 // --- Vibe -> destination suggestions (v1) ---
 const VIBE_SUGGESTIONS: Record<
-  "warm" | "beach" | "skiing" | "citybreak" | "nature",
+  "warm" | "beach" | "skiing" | "citybreak" | "nature" | "romantic",
   string[]
 > = {
   warm: ["Marrakech", "Tenerife", "Dubai", "Athens", "Malta", "Lisbon"],
@@ -219,12 +258,24 @@ const VIBE_SUGGESTIONS: Record<
     "Ljubljana",
     "Tbilisi",
   ],
+  romantic: [
+    "Paris",
+    "Florence",
+    "Venice",
+    "Rome",
+    "Santorini",
+    "Prague",
+    "Vienna",
+    "Bruges",
+  ],
 };
 
 function vibeToQueryPhrase(v: string) {
   switch (v) {
     case "warm":
       return "warm";
+    case "romantic":
+      return "romantic";
     case "beach":
       return "with a beach";
     case "skiing":
@@ -256,7 +307,7 @@ function replaceDestinationInQuery(
     // Replace "to <something>" but STOP when we hit clause words OR vibe words.
     // This is the key fix that prevents "Dubai warm" or "Dubai somewhere warm in march..." being swallowed.
     const TO_CLAUSE_BOUNDARY =
-      "(in|on|this|next|today|tomorrow|under|for|with|only|return|weekend|weekends|weekday|weekdays|warm|beach|ski|skiing|nature|city\\s+break)";
+      "(in|on|this|next|today|tomorrow|under|for|with|only|return|weekend|weekends|weekday|weekdays|warm|beach|romantic|ski|skiing|nature|city\\s+break)";
 
     if (/\bto\b/i.test(s)) {
       s = s.replace(
@@ -273,6 +324,11 @@ function replaceDestinationInQuery(
   // If we ended up with "Dubai warm" right next to each other, drop the warm.
   s = s.replace(
     new RegExp(`\\b${newDestination}\\s+warm\\b`, "i"),
+    newDestination,
+  );
+
+  s = s.replace(
+    new RegExp(`\\b${newDestination}\\s+romantic\\b`, "i"),
     newDestination,
   );
 
@@ -305,6 +361,8 @@ function vibeLabel(v: string) {
   switch (v) {
     case "warm":
       return "Warm";
+    case "Romantic":
+      return "Romantic";
     case "beach":
       return "Beach";
     case "skiing":
@@ -412,23 +470,29 @@ type DayFilter = "weekend" | "weekday";
 function getDayFilterFromQuery(q: string): DayFilter | null {
   const s = q.toLowerCase();
 
+  // If "weekend" is part of a DATE phrase, don't treat it as a day filter
+  const explicitlyOnly =
+    /\bonly\s+weekends?\b/.test(s) || /\bweekends?\s+only\b/.test(s);
+
+  if (/\b(this|next)\s+weekend\b/.test(s) && !explicitlyOnly) {
+    return null;
+  }
+
   // Weekend-only phrases
   const wantsWeekend =
-    /\b(only\s+)?weekends?\b/.test(s) ||
-    /\bweekend\s+only\b/.test(s) ||
+    /\bonly\s+weekends?\b/.test(s) ||
+    /\bweekends?\s+only\b/.test(s) ||
     /\bonly\s+weekend\b/.test(s);
 
   // Weekday-only phrases
   const wantsWeekday =
-    /\b(only\s+)?weekdays?\b/.test(s) ||
-    /\bweekday\s+only\b/.test(s) ||
+    /\bonly\s+weekdays?\b/.test(s) ||
+    /\bweekdays?\s+only\b/.test(s) ||
     /\bonly\s+weekday\b/.test(s);
-
-  // If both appear, don't apply any filter (avoid weird conflicts)
-  if (wantsWeekend && wantsWeekday) return null;
 
   if (wantsWeekend) return "weekend";
   if (wantsWeekday) return "weekday";
+
   return null;
 }
 
@@ -508,6 +572,7 @@ export default function ResultsPage() {
       | "skiing"
       | "citybreak"
       | "nature"
+      | "romantic"
       | undefined;
 
     if (!vibe) return [];
@@ -525,6 +590,11 @@ export default function ResultsPage() {
   const monthLabel = useMemo(() => getMonthLabelFromQuery(query), [query]);
   const relativeDateLabel = useMemo(
     () => getRelativeDateLabelFromQuery(query),
+    [query],
+  );
+
+  const endOfMonthLabel = useMemo(
+    () => getEndOfMonthLabelFromQuery(query),
     [query],
   );
 
@@ -547,12 +617,16 @@ export default function ResultsPage() {
         .join(" ");
     }
 
+    if (endOfMonthLabel) {
+      return endOfMonthLabel;
+    }
+
     if (monthLabel) {
       return monthLabel; // ✅ no "in"
     }
 
     return null;
-  }, [relativeDateLabel, parsed.dateIntent, monthLabel]);
+  }, [relativeDateLabel, parsed.dateIntent, endOfMonthLabel, monthLabel]);
 
   // Clean “to” / “from” for display so words like “only weekends” don’t attach to the city
   const displayRoute = useMemo(() => {
@@ -580,6 +654,7 @@ export default function ResultsPage() {
           )
           // remove vibe words/phrases so destination doesn't become "Dubai warm"
           .replace(/\bwarm\b/gi, "")
+          .replace(/\romantic\b/gi, "")
           .replace(/\bwith\s+a\s+beach\b/gi, "")
           .replace(/\bfor\s+ski(ing)?\b/gi, "")
           .replace(/\bski(ing)?\b/gi, "")
@@ -667,13 +742,22 @@ export default function ResultsPage() {
         ? ` under £${currentParsed.budget.max}`
         : "";
 
+    // Preserve day filter (only weekends / only weekdays)
+    const currentDayFilter = getDayFilterFromQuery(queryInput);
+    const dayTail =
+      currentDayFilter === "weekend"
+        ? " only weekends"
+        : currentDayFilter === "weekday"
+          ? " only weekdays"
+          : "";
+
     const routePart =
       f && f !== "Anywhere" ? `${f} to ${t}` : `Anywhere to ${t}`;
 
     const whenPart = w && w !== "Any time" ? ` ${w}` : "";
     const whoPart = p ? ` ${p}` : "";
 
-    return `${routePart}${whenPart}${budgetTail}${whoPart}`
+    return `${routePart}${whenPart}${budgetTail}${dayTail}${whoPart}`
       .replace(/\s+/g, " ")
       .trim();
   }

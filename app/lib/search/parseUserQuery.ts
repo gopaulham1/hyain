@@ -71,7 +71,16 @@ function extractFromTo(text: string): {
   t = t.replace(/^(go|travel|fly)\s+to\s+/i, "");
   t = t.replace(/^book\s+(a\s+)?(flight|flights)\s+(to|for)\s+/i, "");
 
-  // I am gay....not really
+  // Strip "search intent" filler that should never be treated as a place
+  t = t
+    .replace(/^\s*cheap\s+flights?\s*/i, "")
+    .replace(/^\s*flights?\s*/i, "")
+    .replace(/^\s*cheapest\s+flights?\s*/i, "")
+    .replace(/^\s*cheapest\s*/i, "")
+    .replace(/^\s*tickets?\s*/i, "")
+    .replace(/^\s*deals?\s*/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
   // Helper: clean "place-like" strings
   const cleanPlace = (s: string) => {
@@ -162,10 +171,27 @@ function extractFromTo(text: string): {
 
   if (from || to) return { from, to };
 
+  // If user just typed a place (e.g. "london"), treat it as destination
+  if (
+    t &&
+    !t.includes(" to ") &&
+    !t.startsWith("from ") &&
+    !t.startsWith("to ")
+  ) {
+    const solo = cleanPlace(t);
+    if (solo) return { from: null, to: solo };
+  }
+
   return { from: null, to: null };
 }
 
-type VibeKey = "warm" | "beach" | "skiing" | "citybreak" | "nature";
+type VibeKey =
+  | "warm"
+  | "beach"
+  | "skiing"
+  | "citybreak"
+  | "nature"
+  | "romantic";
 
 const VIBE_PATTERNS: Array<{ key: VibeKey; patterns: RegExp[] }> = [
   {
@@ -206,6 +232,17 @@ const VIBE_PATTERNS: Array<{ key: VibeKey; patterns: RegExp[] }> = [
       /\b(nature|mountains?|hiking|lakes?|forest)\b/i,
       /\b(with|for)\s+nature\b/i,
       /\b(anywhere|somewhere)\s+(that\s+)?(has|with)\s+nature\b/i,
+    ],
+  },
+  {
+    key: "romantic",
+    patterns: [
+      /\bromantic\b/i,
+      /\bromantic\s+getaway\b/i,
+      /\bromance\b/i,
+      /\bcouple(s)?\b/i,
+      /\bhoneymoon\b/i,
+      /\bfor\s+(a\s+)?couple(s)?\b/i,
     ],
   },
 ];
