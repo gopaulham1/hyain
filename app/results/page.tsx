@@ -86,6 +86,7 @@ function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
   const hasNextWeekend = /\bnext\s+weekend\b/.test(query);
 
   const hasThisWeek = /\bthis\s+week\b/.test(query);
+  const hasThisMonth = /\bthis\s+month\b/.test(query);
 
   // You can expand these phrases later
   const hasNextWeek = /\bnext\s+week\b/.test(query);
@@ -182,6 +183,13 @@ function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
     return { start, end };
   }
 
+  // 1.5) this month = current calendar month
+  if (hasThisMonth) {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
+    return { start, end };
+  }
+
   // 2.5) end of [month] = 20th -> last day of that month
   const endOfMonthMatch = query.match(/\bend\s+of\s+([a-z]+)\b/);
   if (endOfMonthMatch) {
@@ -237,6 +245,7 @@ function getRelativeDateLabelFromQuery(q: string): string | null {
   if (/\bnext\s+week\b/.test(s)) return "next week";
 
   if (/\bnext\s+month\b/.test(s)) return "next month";
+  if (/\bthis\s+month\b/.test(s)) return "this month";
 
   return null;
 }

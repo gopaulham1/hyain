@@ -35,16 +35,24 @@ export default function BuildQueryCard({
   buildQuery,
 }: Props) {
   const [fromOpen, setFromOpen] = useState(false);
-  const [fromStage, setFromStage] = useState<"region" | "city">("region");
+  const [fromStage, setFromStage] = useState<"region" | "country" | "city">(
+    "region",
+  );
   const [fromRegion, setFromRegion] = useState<
     "Europe" | "Asia" | "USA" | "Everywhere else" | null
   >(null);
 
+  const [fromCountry, setFromCountry] = useState<string | null>(null);
+
   const [toOpen, setToOpen] = useState(false);
-  const [toStage, setToStage] = useState<"region" | "city">("region");
+  const [toStage, setToStage] = useState<"region" | "country" | "city">(
+    "region",
+  );
   const [toRegion, setToRegion] = useState<
     "Europe" | "Asia" | "USA" | "Everywhere else" | null
   >(null);
+
+  const [toCountry, setToCountry] = useState<string | null>(null);
 
   const cardRef = useRef<HTMLDivElement | null>(null);
 
@@ -59,14 +67,41 @@ export default function BuildQueryCard({
     },
   ] as const;
 
-  const REGION_CITIES: Record<
+  const REGION_COUNTRIES: Record<
     "Europe" | "Asia" | "USA" | "Everywhere else",
     string[]
   > = {
-    Europe: ["London", "Paris", "Milan", "Barcelona"],
-    USA: ["New York", "California", "Texas", "Florida"],
-    Asia: ["China", "India", "Dubai", "Maldives"],
-    "Everywhere else": ["Africa", "South America", "Australia", "Russia"],
+    Europe: ["France", "Germany", "Italy", "Spain", "United Kingdom"],
+    Asia: ["China", "India", "United Arab Emirates", "Maldives"],
+    USA: ["United States"],
+    "Everywhere else": [
+      "Australia",
+      "Brazil",
+      "Canada",
+      "Mauritius",
+      "South Africa",
+    ],
+  };
+
+  const COUNTRY_CITIES: Record<string, string[]> = {
+    "United Kingdom": ["London", "Manchester", "Edinburgh"],
+    France: ["Paris", "Nice", "Lyon"],
+    Germany: ["Berlin", "Munich", "Frankfurt"],
+    Italy: ["Milan", "Rome", "Venice"],
+    Spain: ["Barcelona", "Madrid", "Valencia"],
+
+    China: ["Beijing", "Shanghai", "Shenzhen"],
+    India: ["Delhi", "Mumbai", "Bangalore"],
+    "United Arab Emirates": ["Dubai", "Abu Dhabi"],
+    Maldives: ["Malé"],
+
+    "United States": ["New York", "Los Angeles", "Chicago"],
+
+    Australia: ["Sydney", "Melbourne"],
+    Brazil: ["São Paulo", "Rio de Janeiro"],
+    Canada: ["Toronto", "Vancouver"],
+    Mauritius: ["Port Louis"],
+    "South Africa": ["Cape Town", "Johannesburg"],
   };
 
   const [whenOpen, setWhenOpen] = useState(false);
@@ -169,7 +204,7 @@ export default function BuildQueryCard({
                         className="overflow-hidden border border-black/10 bg-white hover:bg-black/5 transition"
                         onClick={() => {
                           setFromRegion(r.key);
-                          setFromStage("city");
+                          setFromStage("country");
                         }}
                       >
                         {/* You can replace this text-only block with your icon image later */}
@@ -192,7 +227,8 @@ export default function BuildQueryCard({
                 )}
 
                 {/* STAGE 2: CITIES */}
-                {fromStage === "city" && fromRegion && (
+                {/* STAGE 2: COUNTRIES */}
+                {fromStage === "country" && fromRegion && (
                   <div>
                     <div className="flex items-center justify-between px-4 pt-4 pb-2">
                       <button
@@ -201,6 +237,7 @@ export default function BuildQueryCard({
                         onClick={() => {
                           setFromStage("region");
                           setFromRegion(null);
+                          setFromCountry(null);
                         }}
                       >
                         ← Back
@@ -209,27 +246,71 @@ export default function BuildQueryCard({
                       <div className="text-base font-semibold text-gray-900">
                         {fromRegion}
                       </div>
-
                       <div className="w-10" />
                     </div>
 
-                    <div className="pb-3">
-                      {REGION_CITIES[fromRegion].map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-black/5 transition"
-                          onClick={() => {
-                            setFrom(option);
-                            setQuery(buildQuery({ from: option }));
-                            setFromOpen(false);
-                            setFromStage("region");
-                            setFromRegion(null);
-                          }}
-                        >
-                          {option}
-                        </button>
-                      ))}
+                    <div className="pb-3 max-h-[320px] overflow-auto">
+                      {REGION_COUNTRIES[fromRegion]
+                        .slice()
+                        .sort((a, b) => a.localeCompare(b))
+                        .map((country) => (
+                          <button
+                            key={country}
+                            type="button"
+                            className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-black/5 transition"
+                            onClick={() => {
+                              setFromCountry(country);
+                              setFromStage("city");
+                            }}
+                          >
+                            {country}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* STAGE 3: CITIES */}
+                {fromStage === "city" && fromRegion && fromCountry && (
+                  <div>
+                    <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                      <button
+                        type="button"
+                        className="text-base font-semibold text-gray-700 hover:text-gray-900 transition"
+                        onClick={() => {
+                          setFromStage("country");
+                        }}
+                      >
+                        ← Back
+                      </button>
+
+                      <div className="text-base font-semibold text-gray-900">
+                        {fromCountry}
+                      </div>
+                      <div className="w-10" />
+                    </div>
+
+                    <div className="pb-3 max-h-[320px] overflow-auto">
+                      {(COUNTRY_CITIES[fromCountry] ?? [])
+                        .slice()
+                        .sort((a, b) => a.localeCompare(b))
+                        .map((city) => (
+                          <button
+                            key={city}
+                            type="button"
+                            className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-black/5 transition"
+                            onClick={() => {
+                              setFrom(city);
+                              setQuery(buildQuery({ from: city }));
+                              setFromOpen(false);
+                              setFromStage("region");
+                              setFromRegion(null);
+                              setFromCountry(null);
+                            }}
+                          >
+                            {city}
+                          </button>
+                        ))}
                     </div>
                   </div>
                 )}
@@ -283,7 +364,7 @@ export default function BuildQueryCard({
                         className="overflow-hidden border border-black/10 bg-white hover:bg-black/5 transition"
                         onClick={() => {
                           setToRegion(r.key);
-                          setToStage("city");
+                          setToStage("country");
                         }}
                       >
                         <div className="flex flex-col">
@@ -305,7 +386,8 @@ export default function BuildQueryCard({
                 )}
 
                 {/* STAGE 2: CITIES */}
-                {toStage === "city" && toRegion && (
+                {/* STAGE 2: COUNTRIES */}
+                {toStage === "country" && toRegion && (
                   <div>
                     <div className="flex items-center justify-between px-4 pt-4 pb-2">
                       <button
@@ -314,6 +396,7 @@ export default function BuildQueryCard({
                         onClick={() => {
                           setToStage("region");
                           setToRegion(null);
+                          setToCountry(null);
                         }}
                       >
                         ← Back
@@ -322,27 +405,71 @@ export default function BuildQueryCard({
                       <div className="text-base font-semibold text-gray-900">
                         {toRegion}
                       </div>
-
                       <div className="w-10" />
                     </div>
 
-                    <div className="pb-3">
-                      {REGION_CITIES[toRegion].map((option) => (
-                        <button
-                          key={option}
-                          type="button"
-                          className="border border-black/10 bg-white hover:bg-black/5 transition p-6"
-                          onClick={() => {
-                            setTo(option);
-                            setQuery(buildQuery({ to: option }));
-                            setToOpen(false);
-                            setToStage("region");
-                            setToRegion(null);
-                          }}
-                        >
-                          {option}
-                        </button>
-                      ))}
+                    <div className="pb-3 max-h-[320px] overflow-auto">
+                      {REGION_COUNTRIES[toRegion]
+                        .slice()
+                        .sort((a, b) => a.localeCompare(b))
+                        .map((country) => (
+                          <button
+                            key={country}
+                            type="button"
+                            className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-black/5 transition"
+                            onClick={() => {
+                              setToCountry(country);
+                              setToStage("city");
+                            }}
+                          >
+                            {country}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* STAGE 3: CITIES */}
+                {toStage === "city" && toRegion && toCountry && (
+                  <div>
+                    <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                      <button
+                        type="button"
+                        className="text-base font-semibold text-gray-700 hover:text-gray-900 transition"
+                        onClick={() => {
+                          setToStage("country");
+                        }}
+                      >
+                        ← Back
+                      </button>
+
+                      <div className="text-base font-semibold text-gray-900">
+                        {toCountry}
+                      </div>
+                      <div className="w-10" />
+                    </div>
+
+                    <div className="pb-3 max-h-[320px] overflow-auto">
+                      {(COUNTRY_CITIES[toCountry] ?? [])
+                        .slice()
+                        .sort((a, b) => a.localeCompare(b))
+                        .map((city) => (
+                          <button
+                            key={city}
+                            type="button"
+                            className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-black/5 transition"
+                            onClick={() => {
+                              setTo(city);
+                              setQuery(buildQuery({ to: city }));
+                              setToOpen(false);
+                              setToStage("region");
+                              setToRegion(null);
+                              setToCountry(null);
+                            }}
+                          >
+                            {city}
+                          </button>
+                        ))}
                     </div>
                   </div>
                 )}
