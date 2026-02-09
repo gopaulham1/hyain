@@ -468,7 +468,6 @@ export default function BuildQueryCard({
                   </div>
                 )}
 
-                {/* STAGE 2: CITIES */}
                 {/* STAGE 2: COUNTRIES */}
                 {toStage === "country" && toRegion && (
                   <div>

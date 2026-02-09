@@ -95,4 +95,19 @@ body {
 }
 
 
+@layer utilities {
+  button,
+  a,
+  [role="button"],
+  [type="button"],
+  [type="submit"],
+  summary {
+    cursor: pointer !important;
+  }
+
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed !important;
+  }
+}
 
