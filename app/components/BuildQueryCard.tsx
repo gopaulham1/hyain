@@ -56,6 +56,13 @@ export default function BuildQueryCard({
 
   const cardRef = useRef<HTMLDivElement | null>(null);
 
+  const closeAll = () => {
+    setFromOpen(false);
+    setToOpen(false);
+    setWhenOpen(false);
+    setWhoOpen(false);
+  };
+
   const REGION_OPTIONS = [
     { key: "Europe", label: "EUROPE", img: "/images/london2.jpg" },
     { key: "Asia", label: "ASIA", img: "/images/tokyo2.jpg" },
@@ -105,28 +112,103 @@ export default function BuildQueryCard({
   };
 
   const [whenOpen, setWhenOpen] = useState(false);
-  const whenOptions = [
-    "Anytime",
-    "Next week",
-    "Next month",
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
+
+  // NEW
+  type DateMode = "anytime" | "flexible" | "month" | "date";
+  const [dateMode, setDateMode] = useState<DateMode>("anytime");
+  const [departDate, setDepartDate] = useState<Date | null>(null);
+  const [returnDate, setReturnDate] = useState<Date | null>(null);
+
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+
+  const flexibleOptions = [
+    "This Week",
+    "Next Week",
+    "This Month",
+    "Next Month",
+    "Weekends Only",
   ];
 
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+  const isBetween = (d: Date, a: Date, b: Date) => {
+    const t = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const tA = new Date(a.getFullYear(), a.getMonth(), a.getDate()).getTime();
+    const tB = new Date(b.getFullYear(), b.getMonth(), b.getDate()).getTime();
+    return t > Math.min(tA, tB) && t < Math.max(tA, tB);
+  };
+
+  const monthLabel = (d: Date) =>
+    d.toLocaleString(undefined, { month: "long", year: "numeric" });
+
+  const formatPretty = (d: Date) => {
+    const day = d.getDate();
+    const month = d.toLocaleString(undefined, { month: "short" });
+    const year = d.getFullYear();
+    return `${day} ${month} ${year}`;
+  };
+
+  const buildMonthGrid = (monthStart: Date) => {
+    const first = new Date(monthStart.getFullYear(), monthStart.getMonth(), 1);
+    const startDow = (first.getDay() + 6) % 7; // Monday=0
+    const start = new Date(first);
+    start.setDate(first.getDate() - startDow);
+
+    const days: Date[] = [];
+    for (let i = 0; i < 42; i++) {
+      const x = new Date(start);
+      x.setDate(start.getDate() + i);
+      days.push(x);
+    }
+    return days;
+  };
+
+  const applyWhen = (label: string) => {
+    setWhen(label);
+    setQuery(buildQuery({ when: label }));
+  };
+
+  const clearDates = () => {
+    setDepartDate(null);
+    setReturnDate(null);
+    applyWhen("Anytime");
+  };
+
   const [whoOpen, setWhoOpen] = useState(false);
-  const whoOptions = Array.from({ length: 9 }, (_, i) =>
-    i === 0 ? "1 traveler" : `${i + 1} travelers`,
-  );
+
+  const MAX_PAX = 9;
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+
+  const updateWho = (nextAdults: number, nextChildren: number) => {
+    let a = Math.max(1, nextAdults);
+    let c = Math.max(0, nextChildren);
+
+    // cap total pax
+    if (a + c > MAX_PAX) c = MAX_PAX - a;
+
+    setAdults(a);
+    setChildren(c);
+
+    const total = a + c;
+    const label = total === 1 ? "1 traveler" : `${total} travelers`;
+
+    setWho(label);
+    setQuery(buildQuery({ who: label }));
+  };
+
+  // optional: if you want it to start from current `who` prop
+  useEffect(() => {
+    const n = parseInt(who, 10);
+    if (!Number.isNaN(n) && n >= 1) updateWho(n, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -162,15 +244,8 @@ export default function BuildQueryCard({
               type="button"
               className="w-full min-h-[88px] flex flex-col justify-center rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
               onClick={() => {
-                setFromOpen((v) => {
-                  const next = !v;
-                  if (next) {
-                    setFromStage("region");
-                    setFromRegion(null);
-                    setToOpen(false);
-                  }
-                  return next;
-                });
+                if (!fromOpen) closeAll();
+                setFromOpen((v) => !v);
               }}
             >
               <div className="flex items-center gap-3">
@@ -250,6 +325,21 @@ export default function BuildQueryCard({
                     </div>
 
                     <div className="pb-3 max-h-[320px] overflow-auto">
+                      <button
+                        type="button"
+                        className="w-full px-4 py-3 text-left text-sm font-semibold text-gray-900 hover:bg-black/5 transition"
+                        onClick={() => {
+                          setFrom(fromRegion); // sets "Europe"
+                          setQuery(buildQuery({ from: fromRegion }));
+                          setFromOpen(false);
+                          setFromStage("region");
+                          setFromRegion(null);
+                          setFromCountry(null);
+                        }}
+                      >
+                        All of {fromRegion}
+                      </button>
+
                       {REGION_COUNTRIES[fromRegion]
                         .slice()
                         .sort((a, b) => a.localeCompare(b))
@@ -323,15 +413,8 @@ export default function BuildQueryCard({
               type="button"
               className="w-full min-h-[88px] flex flex-col justify-center rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
               onClick={() => {
-                setToOpen((v) => {
-                  const next = !v;
-                  if (next) {
-                    setToStage("region");
-                    setToRegion(null);
-                    setFromOpen(false); // closes the other dropdown (nice UX)
-                  }
-                  return next;
-                });
+                if (!toOpen) closeAll();
+                setToOpen((v) => !v);
               }}
             >
               <div className="flex items-center gap-3">
@@ -409,6 +492,22 @@ export default function BuildQueryCard({
                     </div>
 
                     <div className="pb-3 max-h-[320px] overflow-auto">
+                      <button
+                        type="button"
+                        className="w-full px-4 py-3 text-left text-sm font-semibold text-gray-900 hover:bg-black/5 transition"
+                        onClick={() => {
+                          setTo(toRegion); // sets "Europe"
+                          setQuery(buildQuery({ to: toRegion }));
+                          setToOpen(false);
+                          setWhenOpen(false);
+                          setToStage("region");
+                          setToRegion(null);
+                          setToCountry(null);
+                        }}
+                      >
+                        All of {toRegion}
+                      </button>
+
                       {REGION_COUNTRIES[toRegion]
                         .slice()
                         .sort((a, b) => a.localeCompare(b))
@@ -486,7 +585,10 @@ export default function BuildQueryCard({
             <button
               type="button"
               className="w-full min-h-[88px] flex flex-col justify-center rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
-              onClick={() => setWhenOpen((v) => !v)}
+              onClick={() => {
+                if (!whenOpen) closeAll();
+                setWhenOpen((v) => !v);
+              }}
             >
               <div className="flex items-center gap-3">
                 <img
@@ -510,21 +612,204 @@ export default function BuildQueryCard({
             </button>
 
             {whenOpen && (
-              <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl bg-white/85 backdrop-blur-md border border-black/10 shadow-lg">
-                {whenOptions.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-black/5 transition"
-                    onClick={() => {
-                      setWhen(option);
-                      setQuery(buildQuery({ when: option }));
-                      setWhenOpen(false);
-                    }}
-                  >
-                    {option}
-                  </button>
-                ))}
+              <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl bg-white/85 text-gray-700 backdrop-blur-md border border-black/10 shadow-lg">
+                <div className="grid grid-cols-2 gap-2 p-3 border-b border-black/10">
+                  {[
+                    { key: "anytime", label: "Anytime" },
+                    { key: "flexible", label: "Flexible" },
+                    { key: "month", label: "Month view" },
+                    { key: "date", label: "Choose date" },
+                  ].map((m) => (
+                    <button
+                      key={m.key}
+                      type="button"
+                      onClick={() => {
+                        const mode = m.key as DateMode;
+
+                        setDateMode(mode);
+
+                        if (mode === "anytime") {
+                          clearDates();
+                          setWhenOpen(false);
+                        }
+                      }}
+                      className={`px-3 py-1.5 rounded-full text-sm border transition ${
+                        dateMode === m.key
+                          ? "bg-black text-white"
+                          : "bg-white hover:bg-black/5 text-gray-700"
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="p-3 space-y-2">
+                  {dateMode === "flexible" &&
+                    flexibleOptions.map((opt) => (
+                      <button
+                        key={opt}
+                        className="w-full text-left px-3 py-2 rounded-lg hover:bg-black/5"
+                        onClick={() => {
+                          setWhen(opt);
+                          setWhenOpen(false);
+                          setQuery(buildQuery({ when: opt }));
+                        }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+
+                  {dateMode === "month" && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        "January",
+                        "February",
+                        "March",
+                        "April",
+                        "May",
+                        "June",
+                        "July",
+                        "August",
+                        "September",
+                        "October",
+                        "November",
+                        "December",
+                      ].map((m) => (
+                        <button
+                          key={m}
+                          className="px-3 py-2 rounded-lg hover:bg-black/5 text-sm"
+                          onClick={() => {
+                            setWhen(m);
+                            setWhenOpen(false);
+                            setQuery(buildQuery({ when: m }));
+                          }}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {dateMode === "date" && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <button
+                          type="button"
+                          className="px-2 py-1 rounded-lg hover:bg-black/5"
+                          onClick={() => {
+                            const prev = new Date(calendarMonth);
+                            prev.setMonth(prev.getMonth() - 1);
+                            setCalendarMonth(
+                              new Date(prev.getFullYear(), prev.getMonth(), 1),
+                            );
+                          }}
+                        >
+                          ←
+                        </button>
+
+                        <div className="text-sm font-semibold text-gray-900">
+                          {monthLabel(calendarMonth)}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="px-2 py-1 rounded-lg hover:bg-black/5"
+                          onClick={() => {
+                            const next = new Date(calendarMonth);
+                            next.setMonth(next.getMonth() + 1);
+                            setCalendarMonth(
+                              new Date(next.getFullYear(), next.getMonth(), 1),
+                            );
+                          }}
+                        >
+                          →
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-7 text-xs text-gray-500 px-1">
+                        {["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].map((w) => (
+                          <div key={w} className="py-1 text-center">
+                            {w}
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-7 gap-1">
+                        {buildMonthGrid(calendarMonth).map((d) => {
+                          const inMonth =
+                            d.getMonth() === calendarMonth.getMonth();
+                          const isStart = departDate && sameDay(d, departDate);
+                          const isEnd = returnDate && sameDay(d, returnDate);
+                          const inRange =
+                            departDate &&
+                            returnDate &&
+                            isBetween(d, departDate, returnDate);
+
+                          return (
+                            <button
+                              key={`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`}
+                              type="button"
+                              onClick={() => {
+                                if (!departDate || (departDate && returnDate)) {
+                                  setDepartDate(d);
+                                  setReturnDate(null);
+                                  applyWhen(formatPretty(d)); // one-way
+                                  return;
+                                }
+
+                                if (departDate && !returnDate) {
+                                  if (d.getTime() < departDate.getTime()) {
+                                    setDepartDate(d);
+                                    applyWhen(formatPretty(d));
+                                    return;
+                                  }
+
+                                  setReturnDate(d);
+                                  const formatShort = (d: Date) =>
+                                    `${d.getDate()} ${d.toLocaleString(undefined, { month: "short" })}`;
+
+                                  applyWhen(
+                                    `${formatShort(departDate)} – ${formatShort(d)}`,
+                                  );
+                                  setWhenOpen(false);
+                                }
+                              }}
+                              className={[
+                                "h-9 rounded-lg text-sm transition",
+                                inMonth ? "text-gray-900" : "text-gray-400",
+                                inRange ? "bg-black/10" : "hover:bg-black/5",
+                                isStart || isEnd
+                                  ? "bg-black text-white hover:bg-black"
+                                  : "",
+                              ].join(" ")}
+                            >
+                              {d.getDate()}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <div className="text-xs text-gray-600">
+                          {!departDate && "Select departure"}
+                          {departDate &&
+                            !returnDate &&
+                            "Select return (optional)"}
+                          {departDate && returnDate && "Dates selected"}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="text-xs text-gray-700 hover:text-gray-900 underline"
+                          onClick={clearDates}
+                        >
+                          Reset
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -534,7 +819,10 @@ export default function BuildQueryCard({
             <button
               type="button"
               className="w-full min-h-[88px] flex flex-col justify-center rounded-2xl bg-white/60 border border-black/10 px-4 py-2.5 text-left hover:bg-white/70 transition"
-              onClick={() => setWhoOpen((v) => !v)}
+              onClick={() => {
+                if (!whoOpen) closeAll();
+                setWhoOpen((v) => !v);
+              }}
             >
               <div className="flex items-center gap-3">
                 <img
@@ -555,20 +843,81 @@ export default function BuildQueryCard({
 
             {whoOpen && (
               <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl bg-white/85 backdrop-blur-md border border-black/10 shadow-lg">
-                {whoOptions.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    className="w-full px-4 py-3 text-left text-sm text-gray-900 hover:bg-black/5 transition"
-                    onClick={() => {
-                      setWho(option);
-                      setQuery(buildQuery({ who: option }));
-                      setWhoOpen(false);
-                    }}
-                  >
-                    {option}
-                  </button>
-                ))}
+                <div className="p-4 space-y-5">
+                  {/* Adults */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-gray-900">Adults</div>
+                      <div className="text-sm text-gray-500">Aged 18+</div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        className="h-10 w-10 rounded-xl bg-black/5 hover:bg-black/10 text-gray-900 flex items-center justify-center"
+                        onClick={() => updateWho(adults - 1, children)}
+                        disabled={adults <= 1}
+                      >
+                        −
+                      </button>
+
+                      <div className="w-6 text-center font-semibold text-gray-900">
+                        {adults}
+                      </div>
+
+                      <button
+                        type="button"
+                        className="h-10 w-10 rounded-xl bg-black/5 hover:bg-black/10 text-gray-900 flex items-center justify-center"
+                        onClick={() => updateWho(adults + 1, children)}
+                        disabled={adults + children >= MAX_PAX}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Children */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-semibold text-gray-900">
+                        Children
+                      </div>
+                      <div className="text-sm text-gray-500">Aged 0 to 17</div>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        className="h-10 w-10 rounded-xl bg-black/5 hover:bg-black/10 text-gray-900 flex items-center justify-center"
+                        onClick={() => updateWho(adults, children - 1)}
+                        disabled={children <= 0}
+                      >
+                        −
+                      </button>
+
+                      <div className="w-6 text-center font-semibold text-gray-900">
+                        {children}
+                      </div>
+
+                      <button
+                        type="button"
+                        className="h-10 w-10 rounded-xl bg-black/5 hover:bg-black/10 text-gray-900 flex items-center justify-center"
+                        onClick={() => updateWho(adults, children + 1)}
+                        disabled={adults + children >= MAX_PAX}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      type="button"
+                      className="text-sm text-gray-700 hover:text-gray-900 underline"
+                      onClick={() => setWhoOpen(false)}
+                    ></button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
