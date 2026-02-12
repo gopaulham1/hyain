@@ -22,7 +22,7 @@ function TagPill({ tag }: { tag?: Flight["tag"] }) {
           : "DIRECT";
 
   return (
-    <span className="inline-flex items-center rounded-full bg-black/10 border border-black/10 px-3 py-1 text-xs font-semibold text-gray-800">
+    <span className="inline-flex max-w-full items-center justify-center whitespace-nowrap rounded-full bg-black/10 border border-black/10 px-3 py-[3px] text-[10px] tracking-wide font-semibold text-gray-800">
       {text}
     </span>
   );
@@ -104,8 +104,11 @@ export default function FlightCard({
       <div className="flex items-center justify-between gap-4">
         {/* LEFT */}
         <div className="flex items-center gap-4 min-w-0">
-          <div className="flex flex-col gap-2">
-            <TagPill tag={flight.tag} />
+          <div className="w-20 shrink-0 flex flex-col items-center gap-2">
+            <div className="w-full flex justify-center">
+              <TagPill tag={flight.tag} />
+            </div>
+
             <div className="h-9 w-20 flex items-center justify-center">
               <AirlineLogo airline={flight.airline} />
             </div>

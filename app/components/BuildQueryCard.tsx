@@ -186,7 +186,13 @@ export default function BuildQueryCard({
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
 
-  const updateWho = (nextAdults: number, nextChildren: number) => {
+  const updateWho = (
+    nextAdults: number,
+    nextChildren: number,
+    opts?: { syncQuery?: boolean },
+  ) => {
+    const syncQuery = opts?.syncQuery ?? true;
+
     let a = Math.max(1, nextAdults);
     let c = Math.max(0, nextChildren);
 
@@ -197,16 +203,19 @@ export default function BuildQueryCard({
     setChildren(c);
 
     const total = a + c;
-    const label = total === 1 ? "1 traveler" : `${total} travelers`;
+    const label = total === 1 ? "1 traveller" : `${total} travellers`;
 
     setWho(label);
-    setQuery(buildQuery({ who: label }));
+
+    if (syncQuery) {
+      setQuery(buildQuery({ who: label }));
+    }
   };
 
   // optional: if you want it to start from current `who` prop
   useEffect(() => {
     const n = parseInt(who, 10);
-    if (!Number.isNaN(n) && n >= 1) updateWho(n, 0);
+    if (!Number.isNaN(n) && n >= 1) updateWho(n, 0, { syncQuery: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

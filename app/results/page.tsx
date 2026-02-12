@@ -9,246 +9,12 @@ import ResultsSidebar from "../components/results/ResultsSidebar";
 import Navbar from "../components/Navbar";
 import { parseUserQuery } from "../lib/search/parseUserQuery";
 import { buildResultsUrl } from "../lib/search/buildQueryString";
-
-const MONTHS: Record<string, number> = {
-  jan: 0,
-  january: 0,
-  feb: 1,
-  february: 1,
-  mar: 2,
-  march: 2,
-  apr: 3,
-  april: 3,
-  may: 4,
-  jun: 5,
-  june: 5,
-  jul: 6,
-  july: 6,
-  aug: 7,
-  august: 7,
-  sep: 8,
-  september: 8,
-  oct: 9,
-  october: 9,
-  nov: 10,
-  november: 10,
-  dec: 11,
-  december: 11,
-};
-
-const MONTH_LABELS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-function getMonthLabelFromQuery(q: string): string | null {
-  const s = q.toLowerCase();
-
-  // find month token used in the query ("mar", "march", etc.)
-  const key = Object.keys(MONTHS).find((m) => new RegExp(`\\b${m}\\b`).test(s));
-  if (!key) return null;
-
-  const idx = MONTHS[key];
-  return MONTH_LABELS[idx] ?? null;
-}
-
-function getEndOfMonthLabelFromQuery(q: string): string | null {
-  const s = q.toLowerCase();
-
-  const m = s.match(/\bend\s+of\s+([a-z]+)\b/);
-  if (!m) return null;
-
-  const key = m[1];
-  const idx = MONTHS[key as keyof typeof MONTHS];
-  if (idx == null) return null;
-
-  return `End of ${MONTH_LABELS[idx]}`;
-}
-
-function getDateRangeFromQuery(q: string): { start: Date; end: Date } | null {
-  const query = q.toLowerCase();
-
-  // ✅ A) Relative single-day
-  const hasToday = /\btoday\b/.test(query);
-  const hasTomorrow = /\btomorrow\b/.test(query);
-
-  const hasThisWeekend = /\bthis\s+weekend\b/.test(query);
-  const hasNextWeekend = /\bnext\s+weekend\b/.test(query);
-
-  const hasThisWeek = /\bthis\s+week\b/.test(query);
-  const hasThisMonth = /\bthis\s+month\b/.test(query);
-
-  // You can expand these phrases later
-  const hasNextWeek = /\bnext\s+week\b/.test(query);
-  const hasNextMonth = /\bnext\s+month\b/.test(query);
-
-  // Month name (e.g., "march", "april")
-  const monthName = Object.keys(MONTHS).find((m) =>
-    new RegExp(`\\b${m}\\b`).test(query),
-  );
-
-  const now = new Date();
-
-  // Helpers (midnight boundaries)
-  const startOfDay = (d: Date) =>
-    new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
-
-  // 0) today = today 00:00 -> tomorrow 00:00
-  if (hasToday) {
-    const start = startOfDay(now);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-    return { start, end };
-  }
-
-  // 0b) tomorrow = tomorrow 00:00 -> day after 00:00
-  if (hasTomorrow) {
-    const start = startOfDay(now);
-    start.setDate(start.getDate() + 1);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
-    return { start, end };
-  }
-
-  // B) this weekend = upcoming Sat 00:00 -> Mon 00:00
-  if (hasThisWeekend) {
-    const start = startOfDay(now);
-    const day = start.getDay(); // Sun=0, Sat=6
-    const daysUntilSat = (6 - day + 7) % 7;
-    start.setDate(start.getDate() + daysUntilSat);
-
-    const end = new Date(start);
-    end.setDate(end.getDate() + 2); // Monday
-    return { start, end };
-  }
-
-  // B) next weekend = following Sat 00:00 -> Mon 00:00
-  if (hasNextWeekend) {
-    const start = startOfDay(now);
-    const day = start.getDay();
-    const daysUntilNextSat = ((6 - day + 7) % 7) + 7;
-    start.setDate(start.getDate() + daysUntilNextSat);
-
-    const end = new Date(start);
-    end.setDate(end.getDate() + 2);
-    return { start, end };
-  }
-
-  // C) this week = today 00:00 -> next Monday 00:00
-  if (hasThisWeek) {
-    const start = startOfDay(now);
-
-    const end = new Date(start);
-    const day = end.getDay(); // Sun=0
-    const daysUntilNextMonday = (8 - day) % 7 || 7;
-    end.setDate(end.getDate() + daysUntilNextMonday);
-
-    return { start, end };
-  }
-
-  // C) next week = next Monday 00:00 -> Monday after that 00:00
-  if (hasNextWeek) {
-    const start = startOfDay(now);
-    const day = start.getDay(); // Sun=0
-    const daysUntilNextMonday = (8 - day) % 7 || 7;
-    start.setDate(start.getDate() + daysUntilNextMonday);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 7);
-
-    return { start, end };
-  }
-
-  // 2) next month = next calendar month (e.g., Jan -> Feb)
-  if (hasNextMonth) {
-    const start = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      1,
-      0,
-      0,
-      0,
-      0,
-    );
-    const end = new Date(now.getFullYear(), now.getMonth() + 2, 1, 0, 0, 0, 0);
-    return { start, end };
-  }
-
-  // 1.5) this month = current calendar month
-  if (hasThisMonth) {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
-    return { start, end };
-  }
-
-  // 2.5) end of [month] = 20th -> last day of that month
-  const endOfMonthMatch = query.match(/\bend\s+of\s+([a-z]+)\b/);
-  if (endOfMonthMatch) {
-    const key = endOfMonthMatch[1];
-    const monthIndex = MONTHS[key as keyof typeof MONTHS];
-
-    if (monthIndex != null) {
-      const yearMatch = query.match(/\b(20\d{2})\b/);
-      let year = yearMatch ? Number(yearMatch[1]) : now.getFullYear();
-
-      // end of month boundary
-      const end = new Date(year, monthIndex + 1, 1, 0, 0, 0, 0); // first day of next month 00:00
-      const start = new Date(year, monthIndex, 20, 0, 0, 0, 0); // 20th 00:00
-
-      // If user didn't specify a year and this end-of-month window is already past, bump to next year
-      if (!yearMatch && end.getTime() <= now.getTime()) {
-        year += 1;
-        const end2 = new Date(year, monthIndex + 1, 1, 0, 0, 0, 0);
-        const start2 = new Date(year, monthIndex, 20, 0, 0, 0, 0);
-        return { start: start2, end: end2 };
-      }
-
-      return { start, end };
-    }
-  }
-
-  // 3) named month = that calendar month (by default: this year)
-  if (monthName) {
-    const monthIndex = MONTHS[monthName];
-
-    // If user also typed a year like "2026", respect it
-    const yearMatch = query.match(/\b(20\d{2})\b/);
-    const year = yearMatch ? Number(yearMatch[1]) : now.getFullYear();
-
-    const start = new Date(year, monthIndex, 1, 0, 0, 0, 0);
-    const end = new Date(year, monthIndex + 1, 1, 0, 0, 0, 0);
-    return { start, end };
-  }
-
-  return null;
-}
-
-function getRelativeDateLabelFromQuery(q: string): string | null {
-  const s = q.toLowerCase();
-
-  if (/\btoday\b/.test(s)) return "today";
-  if (/\btomorrow\b/.test(s)) return "tomorrow";
-
-  if (/\bthis\s+weekend\b/.test(s)) return "this weekend";
-  if (/\bnext\s+weekend\b/.test(s)) return "next weekend";
-
-  if (/\bthis\s+week\b/.test(s)) return "this week";
-  if (/\bnext\s+week\b/.test(s)) return "next week";
-
-  if (/\bnext\s+month\b/.test(s)) return "next month";
-  if (/\bthis\s+month\b/.test(s)) return "this month";
-
-  return null;
-}
+import {
+  getMonthLabelFromQuery,
+  getEndOfMonthLabelFromQuery,
+  getDateRangeFromQuery,
+  getRelativeDateLabelFromQuery,
+} from "../lib/results/dateQuery";
 
 // --- Vibe -> destination suggestions (v1) ---
 const VIBE_SUGGESTIONS: Record<
@@ -296,52 +62,6 @@ function vibeToQueryPhrase(v: string) {
     default:
       return v;
   }
-}
-
-function replaceDestinationInQuery(
-  rawQuery: string,
-  newDestination: string,
-  currentTo: string | null,
-) {
-  let s = rawQuery.trim();
-  const lower = s.toLowerCase();
-
-  const toLower = (currentTo ?? "").toLowerCase();
-
-  // If we have an exact "to" chunk from parsing, replace that exact chunk.
-  if (currentTo && toLower && lower.includes(toLower)) {
-    const idx = lower.indexOf(toLower);
-    s = s.slice(0, idx) + newDestination + s.slice(idx + currentTo.length);
-  } else {
-    // Replace "to <something>" but STOP when we hit clause words OR vibe words.
-    // This is the key fix that prevents "Dubai warm" or "Dubai somewhere warm in march..." being swallowed.
-    const TO_CLAUSE_BOUNDARY =
-      "(in|on|this|next|today|tomorrow|under|for|with|only|return|weekend|weekends|weekday|weekdays|warm|beach|romantic|ski|skiing|nature|city\\s+break)";
-
-    if (/\bto\b/i.test(s)) {
-      s = s.replace(
-        new RegExp(`\\bto\\s+(.+?)(?=\\s+${TO_CLAUSE_BOUNDARY}\\b|$)`, "i"),
-        `to ${newDestination}`,
-      );
-    } else {
-      // No "to ..." at all — remove leading "somewhere/anywhere" then prepend "to Dubai"
-      s = s.replace(/^\s*(somewhere|anywhere)\b\s*/i, "");
-      s = `to ${newDestination} ${s}`.trim();
-    }
-  }
-
-  // If we ended up with "Dubai warm" right next to each other, drop the warm.
-  s = s.replace(
-    new RegExp(`\\b${newDestination}\\s+warm\\b`, "i"),
-    newDestination,
-  );
-
-  s = s.replace(
-    new RegExp(`\\b${newDestination}\\s+romantic\\b`, "i"),
-    newDestination,
-  );
-
-  return s.replace(/\s+/g, " ").trim();
 }
 
 function buildSuggestedQuery(
@@ -663,7 +383,7 @@ export default function ResultsPage() {
           )
           // remove vibe words/phrases so destination doesn't become "Dubai warm"
           .replace(/\bwarm\b/gi, "")
-          .replace(/\romantic\b/gi, "")
+          .replace(/\bromantic\b/gi, "")
           .replace(/\bwith\s+a\s+beach\b/gi, "")
           .replace(/\bfor\s+ski(ing)?\b/gi, "")
           .replace(/\bski(ing)?\b/gi, "")
@@ -681,6 +401,14 @@ export default function ResultsPage() {
             /\b\d+\s*(people|pax|passengers?|travellers?|travelers?)\b/gi,
             "",
           )
+
+          // remove "for me / for me and my wife" style pax phrases
+          .replace(/\bfor\s+me\b/gi, "")
+          .replace(
+            /\bfor\s+me\s+(and|&)\s+(my\s+)?(wife|husband|partner)\b/gi,
+            "",
+          )
+          .replace(/\b(and|&)\s+(my\s+)?(wife|husband|partner)\b/gi, "")
 
           // remove lonely leftovers
           .replace(/\bonly\b/gi, "")
@@ -1025,8 +753,19 @@ export default function ResultsPage() {
                                 ? `${cleanFrom} to ${dest}`
                                 : `to ${dest}`;
 
+                              const paxTail =
+                                parsed.passengers != null
+                                  ? ` for ${parsed.passengers} traveler${parsed.passengers === 1 ? "" : "s"}`
+                                  : "";
+
+                              const tripTail =
+                                parsed.tripType === "return" ? " return" : "";
+
+                              // optional: if you also parse cabin somewhere
+                              // const cabinTail = parsed.cabin ? ` ${parsed.cabin}` : "";
+
                               const nextQuery =
-                                `${base}${budgetTail}${whenTail}${dayTail}`
+                                `${base}${budgetTail}${whenTail}${dayTail}${paxTail}${tripTail}`
                                   .replace(/\s+/g, " ")
                                   .trim();
 
