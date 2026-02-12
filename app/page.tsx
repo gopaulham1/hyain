@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { whatsOnSoonCards } from "@/data/whatsOnSoon";
+// import { whatsOnSoonCards } from "@/data/whatsOnSoon";
 import { cheapestDeals } from "@/data/cheapestDeals";
 import BuildQueryCard from "./components/BuildQueryCard";
 import Navbar from "./components/Navbar";
@@ -16,6 +16,35 @@ export default function Home() {
   const [to, setTo] = useState("Anywhere");
   const [when, setWhen] = useState("Flexible");
   const [who, setWho] = useState("1 traveler");
+
+  type WhatsOnCard = {
+    id: string;
+    title: string;
+    meta: string;
+    img: string;
+    alt: string;
+  };
+
+  const [whatsOnCards, setWhatsOnCards] = useState<WhatsOnCard[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/whats-on-soon", { cache: "no-store" });
+        const data = (await res.json()) as WhatsOnCard[];
+        if (!cancelled) setWhatsOnCards(data);
+      } catch {
+        // If it fails, no stress — UI just shows nothing (or you can add fallback)
+        if (!cancelled) setWhatsOnCards([]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const router = useRouter();
   function buildQuery(
@@ -133,9 +162,9 @@ export default function Home() {
               </div>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                {whatsOnSoonCards.map((card) => (
+                {whatsOnCards.map((card) => (
                   <button
-                    key={`${card.title}-${card.meta}`}
+                    key={card.id}
                     className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30"
                   >
                     <Image
