@@ -9,6 +9,7 @@ import BuildQueryCard from "./components/BuildQueryCard";
 import Navbar from "./components/Navbar";
 import { parseUserQuery } from "./lib/search/parseUserQuery";
 import { buildResultsUrl } from "./lib/search/buildQueryString";
+import { febWhatsOnStatic } from "@/data/whatsOnSoonStatic";
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -25,7 +26,8 @@ export default function Home() {
     alt: string;
   };
 
-  const [whatsOnCards, setWhatsOnCards] = useState<WhatsOnCard[]>([]);
+  // const [whatsOnCards, setWhatsOnCards] = useState<WhatsOnCard[]>([]);
+  const [tmCards, setTmCards] = useState<WhatsOnCard[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -34,10 +36,10 @@ export default function Home() {
       try {
         const res = await fetch("/api/whats-on-soon", { cache: "no-store" });
         const data = (await res.json()) as WhatsOnCard[];
-        if (!cancelled) setWhatsOnCards(data);
+        if (!cancelled) setTmCards(data.slice(0, 3));
       } catch {
         // If it fails, no stress — UI just shows nothing (or you can add fallback)
-        if (!cancelled) setWhatsOnCards([]);
+        if (!cancelled) setTmCards([]);
       }
     })();
 
@@ -162,29 +164,58 @@ export default function Home() {
               </div>
 
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                {whatsOnCards.map((card) => (
-                  <button
-                    key={card.id}
-                    className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30"
-                  >
-                    <Image
-                      src={card.img}
-                      alt={card.alt}
-                      fill
-                      className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                    />
+                {/* LEFT COLUMN: static Feb moments (3 rows) */}
+                <div className="grid gap-4">
+                  {febWhatsOnStatic.slice(0, 3).map((card) => (
+                    <button
+                      key={card.id}
+                      className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30"
+                    >
+                      <Image
+                        src={card.img}
+                        alt={card.alt}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
 
-                    <div className="relative z-10 text-gray-900">
-                      <p className="text-xl font-semibold tracking-tight text-gray-900">
-                        {card.title}
-                      </p>
-                      <p className="text-base md:text-lg text-gray-700">
-                        {card.meta}
-                      </p>
-                    </div>
-                  </button>
-                ))}
+                      <div className="relative z-10 inline-flex max-w-[85%] flex-col gap-0.5 rounded-xl bg-white/10 px-3 py-2 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
+                        <p className="text-xl font-semibold tracking-tight text-gray-900">
+                          {card.title}
+                        </p>
+                        <p className="text-base md:text-lg text-gray-700">
+                          {card.meta}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                {/* RIGHT COLUMN: Ticketmaster events (3 rows) */}
+                <div className="grid gap-4">
+                  {tmCards.map((card) => (
+                    <button
+                      key={card.id}
+                      className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30"
+                    >
+                      <Image
+                        src={card.img}
+                        alt={card.alt}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                      />
+                      <div className="relative z-10 inline-flex max-w-[85%] flex-col gap-0.5 rounded-xl bg-white/10 px-3 py-2 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
+                        <p className="text-xl font-semibold tracking-tight text-gray-900">
+                          {card.title}
+                        </p>
+                        <p className="text-base md:text-lg text-gray-700">
+                          {card.meta}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
