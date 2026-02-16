@@ -32,11 +32,18 @@ export default function Home() {
 
     (async () => {
       try {
-        const res = await fetch("/api/whats-on-soon", { cache: "no-store" });
-        const data = (await res.json()) as WhatsOnCard[];
-        if (!cancelled) setWhatsOnCards(data);
+        const [tmRes, calRes] = await Promise.all([
+          fetch("/api/whats-on-soon", { cache: "no-store" }),
+          fetch("/api/month-occasions", { cache: "no-store" }),
+        ]);
+
+        const tm = (await tmRes.json()) as WhatsOnCard[];
+        const cal = (await calRes.json()) as WhatsOnCard[];
+
+        const combined = [...cal, ...tm].slice(0, 4);
+
+        if (!cancelled) setWhatsOnCards(combined);
       } catch {
-        // If it fails, no stress — UI just shows nothing (or you can add fallback)
         if (!cancelled) setWhatsOnCards([]);
       }
     })();
