@@ -10,8 +10,12 @@ import Navbar from "./components/Navbar";
 import { parseUserQuery } from "./lib/search/parseUserQuery";
 import { buildResultsUrl } from "./lib/search/buildQueryString";
 import { febWhatsOnStatic } from "@/data/whatsOnSoonStatic";
+import { useLocation } from "./providers/LocationProvider";
 
 export default function Home() {
+  const { geo } = useLocation();
+  const originLabel = geo?.city ?? "London";
+
   const [query, setQuery] = useState("");
   const [from, setFrom] = useState("London");
   const [to, setTo] = useState("Anywhere");
@@ -223,7 +227,7 @@ export default function Home() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="hyain-serif tracking-tight text-xl md:text-2xl font-extrabold text-gray-900">
-                    Cheapest from London LTN
+                    Cheapest from {originLabel}
                   </h2>
 
                   <p className="mt-1 text-base md:text-lg font-semibold text-gray-600">
