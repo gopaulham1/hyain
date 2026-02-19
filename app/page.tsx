@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-// import { whatsOnSoonCards } from "@/data/whatsOnSoon";
 import { cheapestDeals } from "@/data/cheapestDeals";
 import BuildQueryCard from "./components/BuildQueryCard";
 import Navbar from "./components/Navbar";
 import { parseUserQuery } from "./lib/search/parseUserQuery";
 import { buildResultsUrl } from "./lib/search/buildQueryString";
-import { febWhatsOnStatic } from "@/data/whatsOnSoonStatic";
+import { whatsOnSoonCards } from "@/data/whatsOnSoon";
 import { useLocation } from "./providers/LocationProvider";
 import Link from "next/link";
 
@@ -32,7 +31,6 @@ export default function Home() {
   };
 
   // const [whatsOnCards, setWhatsOnCards] = useState<WhatsOnCard[]>([]);
-  const [tmCards, setTmCards] = useState<WhatsOnCard[]>([]);
 
   useEffect(() => {
     // Only auto-fill origin if user hasn't changed it manually yet
@@ -41,25 +39,6 @@ export default function Home() {
 
     setFrom(geo.city);
   }, [geo?.city]); // intentionally NOT depending on `from` to avoid loops
-
-  useEffect(() => {
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const res = await fetch("/api/whats-on-soon", { cache: "no-store" });
-        const data = (await res.json()) as WhatsOnCard[];
-        if (!cancelled) setTmCards(data.slice(0, 3));
-      } catch {
-        // If it fails, no stress — UI just shows nothing (or you can add fallback)
-        if (!cancelled) setTmCards([]);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   const router = useRouter();
   function buildQuery(
@@ -72,11 +51,6 @@ export default function Home() {
 
     return `Flights from ${f} to ${t} ${w} ${p}`.replace(/\s+/g, " ").trim();
   }
-  const cityFromMeta = (meta: string) => {
-    const parts = meta.split("·").map((s) => s.trim());
-    const place = parts[1] || meta;
-    return place.split(",")[0].trim(); // "Düsseldorf, DE" -> "Düsseldorf"
-  };
 
   function submitSearch() {
     if (!query.trim()) return;
@@ -180,68 +154,34 @@ export default function Home() {
                   More events →
                 </button>
               </div>
-
+              {/* WHAT'S ON SOON SECTION */}
               <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                {/* LEFT COLUMN: static Feb moments (3 rows) */}
-                <div className="grid gap-4">
-                  {febWhatsOnStatic.slice(0, 3).map((card) => (
-                    <Link
-                      key={card.id}
-                      href={`/results?from=${encodeURIComponent(originLabel)}&to=${encodeURIComponent(
-                        card.city,
-                      )}&trip=oneway`}
-                      className="group relative block h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30"
-                    >
-                      <Image
-                        src={card.img}
-                        alt={card.alt}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                      />
+                {whatsOnSoonCards.slice(0, 6).map((card) => (
+                  <Link
+                    key={card.id}
+                    href={`/results?from=${encodeURIComponent(originLabel)}&to=${encodeURIComponent(
+                      card.city,
+                    )}&trip=oneway`}
+                    className="group relative block h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30"
+                  >
+                    <Image
+                      src={card.img}
+                      alt={card.alt}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
 
-                      <div className="relative z-10 inline-flex max-w-[85%] flex-col gap-0.5 rounded-xl bg-white/10 px-3 py-2 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
-                        <p className="text-xl font-semibold tracking-tight text-gray-900">
-                          {card.title}
-                        </p>
-                        <p className="text-base md:text-lg text-gray-700">
-                          {card.meta}
-                        </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-
-                {/* RIGHT COLUMN: Ticketmaster events (3 rows) */}
-                <div className="grid gap-4">
-                  {tmCards.map((card) => {
-                    const dest = cityFromMeta(card.meta);
-
-                    return (
-                      <Link
-                        key={card.id}
-                        href={`/results?from=${encodeURIComponent(originLabel)}&to=${encodeURIComponent(dest)}&trip=oneway`}
-                        className="group relative block h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30"
-                      >
-                        <Image
-                          src={card.img}
-                          alt={card.alt}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
-                          sizes="(max-width: 768px) 100vw, 33vw"
-                        />
-                        <div className="relative z-10 inline-flex max-w-[85%] flex-col gap-0.5 rounded-xl bg-white/10 px-3 py-2 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
-                          <p className="text-xl font-semibold tracking-tight text-gray-900">
-                            {card.title}
-                          </p>
-                          <p className="text-base md:text-lg text-gray-700">
-                            {card.meta}
-                          </p>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
+                    <div className="relative z-10 inline-flex max-w-[85%] flex-col gap-0.5 rounded-xl px-3 py-2 bg-black/3 ring-1 ring-black/5">
+                      <p className="text-xl font-semibold tracking-tight text-gray-900">
+                        {card.title}
+                      </p>
+                      <p className="text-base md:text-lg text-gray-700">
+                        {card.meta}
+                      </p>
+                    </div>
+                  </Link>
+                ))}
               </div>
             </div>
 

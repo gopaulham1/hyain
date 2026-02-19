@@ -37,6 +37,10 @@ function AirlineLogo({ airline }: { airline: string }) {
   else if (a.includes("wizz")) src = "/airlines/wizzair.jpg";
   else if (a.includes("ryan")) src = "/airlines/ryanair.jpg";
   else if (a.includes("vueling")) src = "/airlines/vueling.jpg";
+  else if (a.includes("klm")) src = "/airlines/klm.png";
+  else if (a.includes("france")) src = "/airlines/air-france.png";
+  else if (a.includes("lufthansa")) src = "/airlines/lufty.png";
+  else if (a.includes("qatar")) src = "/airlines/qatari.png";
   else if (a.includes("turkish")) src = "/airlines/turkish.jpg";
   else if (a.includes("ita")) src = "/airlines/ita.jpg";
   else if (a.includes("lot")) src = "/airlines/lot.jpg";

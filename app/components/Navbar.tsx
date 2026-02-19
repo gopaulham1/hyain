@@ -14,7 +14,6 @@ export default function Navbar() {
       {/* Middle: links (hidden on mobile) */}
       <div className="hidden sm:flex items-center gap-8 text-base md:text-lg text-gray-700">
         <button className="hover:text-gray-900 transition">About</button>
-        <button className="hover:text-gray-900 transition">♡ Saved</button>
       </div>
 
       {/* Right: Sign in */}

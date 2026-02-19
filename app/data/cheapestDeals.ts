@@ -22,11 +22,11 @@ export const cheapestDeals: CheapestDeal[] = [
     alt: "Rome",
   },
   {
-    city: "Rio De Janeiro",
+    city: "Amsterdam",
     month: "March",
-    price: "£75",
-    img: "/images/rio3.jpg",
-    alt: "Rio de Janeiro",
+    price: "£55",
+    img: "/images/amsterdam.jpg",
+    alt: "Amsterdam",
   },
   {
     city: "Barcelona",
