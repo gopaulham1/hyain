@@ -34,6 +34,14 @@ export default function Home() {
   const [tmCards, setTmCards] = useState<WhatsOnCard[]>([]);
 
   useEffect(() => {
+    // Only auto-fill origin if user hasn't changed it manually yet
+    if (!geo?.city) return;
+    if (from !== "London") return;
+
+    setFrom(geo.city);
+  }, [geo?.city]); // intentionally NOT depending on `from` to avoid loops
+
+  useEffect(() => {
     let cancelled = false;
 
     (async () => {
@@ -163,7 +171,7 @@ export default function Home() {
                 </div>
 
                 <button className="text-base md:text-lg font-semibold text-gray-700 hover:text-gray-900 transition">
-                  Find flights for this →
+                  More events →
                 </button>
               </div>
 
