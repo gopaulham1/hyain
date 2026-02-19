@@ -25,7 +25,7 @@ export const febWhatsOnStatic: WhatsOnStaticCard[] = [
     meta: "Feb · Marrakech",
     img: "/images/morocco.jpg",
     alt: "Morocco",
-    city: "Marrakesh",
+    city: "Marrakech",
     countryCode: "MA",
   },
   {

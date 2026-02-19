@@ -11,6 +11,7 @@ import { parseUserQuery } from "./lib/search/parseUserQuery";
 import { buildResultsUrl } from "./lib/search/buildQueryString";
 import { febWhatsOnStatic } from "@/data/whatsOnSoonStatic";
 import { useLocation } from "./providers/LocationProvider";
+import Link from "next/link";
 
 export default function Home() {
   const { geo } = useLocation();
@@ -71,6 +72,11 @@ export default function Home() {
 
     return `Flights from ${f} to ${t} ${w} ${p}`.replace(/\s+/g, " ").trim();
   }
+  const cityFromMeta = (meta: string) => {
+    const parts = meta.split("·").map((s) => s.trim());
+    const place = parts[1] || meta;
+    return place.split(",")[0].trim(); // "Düsseldorf, DE" -> "Düsseldorf"
+  };
 
   function submitSearch() {
     if (!query.trim()) return;
@@ -179,9 +185,12 @@ export default function Home() {
                 {/* LEFT COLUMN: static Feb moments (3 rows) */}
                 <div className="grid gap-4">
                   {febWhatsOnStatic.slice(0, 3).map((card) => (
-                    <button
+                    <Link
                       key={card.id}
-                      className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30"
+                      href={`/results?from=${encodeURIComponent(originLabel)}&to=${encodeURIComponent(
+                        card.city,
+                      )}&trip=oneway`}
+                      className="group relative block h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30"
                     >
                       <Image
                         src={card.img}
@@ -199,34 +208,39 @@ export default function Home() {
                           {card.meta}
                         </p>
                       </div>
-                    </button>
+                    </Link>
                   ))}
                 </div>
 
                 {/* RIGHT COLUMN: Ticketmaster events (3 rows) */}
                 <div className="grid gap-4">
-                  {tmCards.map((card) => (
-                    <button
-                      key={card.id}
-                      className="group relative h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30"
-                    >
-                      <Image
-                        src={card.img}
-                        alt={card.alt}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                      />
-                      <div className="relative z-10 inline-flex max-w-[85%] flex-col gap-0.5 rounded-xl bg-white/10 px-3 py-2 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
-                        <p className="text-xl font-semibold tracking-tight text-gray-900">
-                          {card.title}
-                        </p>
-                        <p className="text-base md:text-lg text-gray-700">
-                          {card.meta}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
+                  {tmCards.map((card) => {
+                    const dest = cityFromMeta(card.meta);
+
+                    return (
+                      <Link
+                        key={card.id}
+                        href={`/results?from=${encodeURIComponent(originLabel)}&to=${encodeURIComponent(dest)}&trip=oneway`}
+                        className="group relative block h-36 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 p-4 text-left transition hover:bg-white/30"
+                      >
+                        <Image
+                          src={card.img}
+                          alt={card.alt}
+                          fill
+                          className="object-cover transition-transform duration-500 group-hover:scale-[1.03] brightness-[1.12] contrast-[1.06] saturate-[0.95]"
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                        />
+                        <div className="relative z-10 inline-flex max-w-[85%] flex-col gap-0.5 rounded-xl bg-white/10 px-3 py-2 backdrop-blur-sm shadow-sm ring-1 ring-black/5">
+                          <p className="text-xl font-semibold tracking-tight text-gray-900">
+                            {card.title}
+                          </p>
+                          <p className="text-base md:text-lg text-gray-700">
+                            {card.meta}
+                          </p>
+                        </div>
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -250,9 +264,12 @@ export default function Home() {
 
               <div className="mt-5 space-y-3">
                 {cheapestDeals.map((deal) => (
-                  <button
+                  <Link
                     key={`${deal.city}-${deal.month}-${deal.price}`}
-                    className="group relative h-32 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 text-left transition duration-300 ease-out hover:bg-white/30 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/20"
+                    href={`/results?from=${encodeURIComponent(originLabel)}&to=${encodeURIComponent(
+                      deal.city,
+                    )}&trip=oneway`}
+                    className="group relative block h-32 w-full overflow-hidden rounded-2xl border border-white/30 bg-white/20 text-left transition duration-300 ease-out hover:bg-white/30 hover:scale-[1.01] hover:shadow-xl hover:shadow-black/20"
                   >
                     <Image
                       src={deal.img}
@@ -276,7 +293,7 @@ export default function Home() {
                         {deal.price}
                       </p>
                     </div>
-                  </button>
+                  </Link>
                 ))}
               </div>
             </div>

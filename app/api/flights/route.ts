@@ -29,6 +29,8 @@ const GROUPS: Record<string, string[]> = {
 function cleanPlace(raw: string) {
   return raw
     .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove accents/diacritics
     .replace(/[.,!?]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
