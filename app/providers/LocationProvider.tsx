@@ -41,14 +41,34 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
     }
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setGeo({
-          lat: pos.coords.latitude,
-          lon: pos.coords.longitude,
-          source: "gps",
-        });
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+
+        try {
+          const res = await fetch(`/api/reverse-geocode?lat=${lat}&lon=${lon}`);
+
+          const data = await res.json();
+
+          setGeo({
+            lat,
+            lon,
+            city: data.city,
+            country: data.country,
+            source: "gps",
+          });
+        } catch {
+          // fallback if reverse geocode fails
+          setGeo({
+            lat,
+            lon,
+            source: "gps",
+          });
+        }
+
         setLoading(false);
       },
+
       (err) => {
         setError(err.message || "Location permission denied");
         setGeo(null);
