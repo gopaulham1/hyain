@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { LocationProvider } from "./providers/LocationProvider";
 
 const sans = Inter({
   subsets: ["latin"],
@@ -34,7 +35,7 @@ export default function RootLayout({
       <body
         className={`${sans.variable} ${serif.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <LocationProvider>{children}</LocationProvider>
       </body>
     </html>
   );

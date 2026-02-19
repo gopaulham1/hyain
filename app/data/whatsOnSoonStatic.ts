@@ -22,7 +22,7 @@ export const febWhatsOnStatic: WhatsOnStaticCard[] = [
   {
     id: "feb-ramadan",
     title: "Ramadan",
-    meta: "Feb · Morocco",
+    meta: "Feb · Marrakech",
     img: "/images/morocco.jpg",
     alt: "Morocco",
     city: "Marrakesh",
