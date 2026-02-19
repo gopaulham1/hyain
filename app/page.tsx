@@ -228,6 +228,11 @@ export default function Home() {
                 <div>
                   <h2 className="hyain-serif tracking-tight text-xl md:text-2xl font-extrabold text-gray-900">
                     Cheapest from {originLabel}
+                    {geo?.lat && geo?.lon ? (
+                      <p className="text-xs opacity-70 mt-1">
+                        GPS: {geo.lat.toFixed(3)}, {geo.lon.toFixed(3)}
+                      </p>
+                    ) : null}
                   </h2>
 
                   <p className="mt-1 text-base md:text-lg font-semibold text-gray-600">
