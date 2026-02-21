@@ -1,27 +1,45 @@
 "use client";
 
-import { useMemo, useState } from "react";
-
-type Passport = "UK" | "EU" | "Turkey";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 const CITY_TO_ISO2: Record<string, string> = {
+  london: "GB",
   paris: "FR",
   rome: "IT",
+  milan: "IT",
   barcelona: "ES",
   amsterdam: "NL",
-  prague: "CZ",
-  vienna: "AT",
   berlin: "DE",
+  beijing: "CN",
   lisbon: "PT",
   athens: "GR",
   dubai: "AE",
   marrakech: "MA",
+  istanbul: "TR",
+  chișinău: "MD",
+  chisinau: "MD",
 };
 
 function cityToIso2(city: string) {
   const key = city.trim().toLowerCase();
   return CITY_TO_ISO2[key] ?? null;
 }
+
+const ISO2_TO_PASSPORT_NAME: Record<string, string> = {
+  GB: "British",
+  MD: "Moldovan",
+  TR: "Turkish",
+  FR: "French",
+  ES: "Spanish",
+  AE: "Emirati",
+  CN: "China",
+  IT: "Italian",
+  NL: "Dutch",
+  DE: "German",
+  PT: "Portuguese",
+  GR: "Greek",
+  MA: "Moroccan",
+};
 
 function SideRow({
   title,
@@ -86,77 +104,96 @@ export default function ResultsSidebar({
   fromCity,
   toCity,
 }: ResultsSidebarProps) {
-  // keep this logic inside sidebar for now (zero risk refactor)
-  const visaByPassport = useMemo(
-    () =>
-      ({
-        UK: {
-          headline: "90 days visa-free",
-          sub: "UK passport · tourism & business",
-          badge: "OK to enter",
-          statusEmoji: "✅",
-        },
-        EU: {
-          headline: "90 days visa-free",
-          sub: "EU passport · tourism & business",
-          badge: "OK to enter",
-          statusEmoji: "✅",
-        },
-        Turkey: {
-          headline: "Visa required",
-          sub: "Turkish passport · check requirements",
-          badge: "Check details",
-          statusEmoji: "⚠️",
-        },
-      }) as const,
-    [],
-  );
+  const passportIso2 = cityToIso2(fromCity) ?? "MD";
+  const destinationIso2 = cityToIso2(toCity) ?? "AE";
 
-  const destinationIso2 = useMemo(() => cityToIso2(toCity), [toCity]);
+  const passportLabel = ISO2_TO_PASSPORT_NAME[passportIso2] ?? passportIso2;
 
-  const [passport, setPassport] = useState<Passport>("UK");
-  // --- Visa API state ---
-  const passportIso2 = useMemo(() => {
-    if (passport === "UK") return "GB";
-    if (passport === "Turkey") return "TR";
-    // EU is a placeholder in your UI, pick a default for MVP
-    return "FR";
-  }, [passport]);
+  // const passportLabel = ISO2_TO_PASSPORT_NAME[passportIso2] ?? passportIso2;
+  // const destinationIso2 = useMemo(() => cityToIso2(toCity), [toCity]);
+  // const passportIso2 = useMemo(() => cityToIso2(fromCity) ?? "GB", [fromCity]);
+
   const [visaLoading, setVisaLoading] = useState(false);
   const [visaError, setVisaError] = useState<string | null>(null);
   const [visaData, setVisaData] = useState<any>(null);
 
+  const visaRequired = !!visaData?.visaRequired;
+
+  const visaTintClasses = visaRequired
+    ? "border-red-600/25 bg-red-600/15"
+    : "border-emerald-600/25 bg-emerald-600/15";
+
   async function handleCheckVisa() {
-    if (!destinationIso2) {
-      setVisaError("Destination not supported yet.");
+    try {
+      setVisaLoading(true);
+      setVisaError(null);
+
+      const res = await fetch("/api/visa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          passport: passportIso2,
+          destination: destinationIso2,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok || !json?.ok) {
+        setVisaError(json?.error || "Couldn’t fetch visa info right now.");
+        setVisaData(null);
+        return;
+      }
+
+      setVisaData(json);
+    } catch (err) {
+      setVisaError("Couldn’t fetch visa info right now.");
       setVisaData(null);
-      return;
+    } finally {
+      setVisaLoading(false);
     }
-
-    setVisaLoading(true);
-    setVisaError(null);
-
-    const res = await fetch("/api/visa", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        passport: passportIso2,
-        destination: destinationIso2,
-      }),
-    });
-
-    const json = await res.json();
-    setVisaLoading(false);
-
-    if (!json.ok) {
-      setVisaError(json.error || "Couldn’t fetch visa info right now.");
-      setVisaData(null);
-      return;
-    }
-
-    setVisaData(json);
   }
-  const preset = visaByPassport[passport] ?? visaByPassport.UK;
+
+  const lastVisaKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    const key = `${passportIso2}-${destinationIso2}`;
+
+    // prevents double-call (dev fast refresh / strict mode vibes)
+    if (lastVisaKeyRef.current === key) return;
+
+    lastVisaKeyRef.current = key;
+    handleCheckVisa();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passportIso2, destinationIso2]);
+
+  const countryNameMap: Record<string, string> = {
+    GB: "United Kingdom",
+    FR: "France",
+    ES: "Spain",
+    AE: "United Arab Emirates",
+    CN: "China",
+    MD: "Moldova",
+    TR: "Turkey",
+  };
+
+  function toSlug(value: string) {
+    return value
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z-]/g, "");
+  }
+
+  const destinationName =
+    countryNameMap[destinationIso2 ?? ""] || destinationIso2;
+
+  const passportName =
+    ISO2_TO_PASSPORT_NAME[passportIso2 ?? ""] || passportIso2;
+
+  const sherpaUrl = `https://apply.joinsherpa.com/visa/${toSlug(
+    destinationName,
+  )}/${toSlug(passportName)}-citizens`;
+
   return (
     <aside className="lg:col-span-5 self-start lg:sticky lg:top-6 lg:pl-2">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -167,9 +204,6 @@ export default function ResultsSidebar({
               <h2 className="hyain-serif text-2xl font-semibold text-gray-900">
                 Visa & entry
               </h2>
-              <p className="text-xs text-gray-600">
-                Dest ISO2: {destinationIso2 ?? "unknown"}
-              </p>
               <p className="mt-1 text-sm text-gray-700">
                 Quick check before you book
               </p>
@@ -181,48 +215,51 @@ export default function ResultsSidebar({
           </div>
 
           <div className="mt-4 space-y-3 text-gray-800">
-            <div className="rounded-2xl border border-emerald-600/25 bg-emerald-500/12 p-4 backdrop-blur-2xl">
+            <div
+              className={`rounded-2xl border p-4 backdrop-blur-2xl ${visaTintClasses}`}
+            >
+              {" "}
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {preset.statusEmoji}{" "}
-                    {preset.headline.includes("Visa required")
-                      ? "Visa required"
-                      : "Visa-free"}
+                  {/* Top status row */}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-gray-900">
+                      {visaData?.visaRequired
+                        ? "⚠️  Visa required"
+                        : `✅  Visa-free${visaData?.durationDays ? ` – ${visaData.durationDays} days` : ""}`}
+                    </h3>
+                  </div>
+
+                  {/* Passport line */}
+                  <p className="mt-2 text-sm text-gray-700">
+                    {passportLabel} passport · tourism & business
                   </p>
 
-                  <p className="mt-1 text-lg font-semibold text-gray-900">
-                    {preset.headline}
-                  </p>
+                  {/* Passport + destination pills (static) */}
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-semibold">Passport</span>
+                    <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold">
+                      {passportLabel}
+                    </span>
 
-                  <p className="mt-1 text-sm text-gray-700">{preset.sub}</p>
+                    <span className="ml-2 font-semibold">To</span>
+                    <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold">
+                      {countryNameMap[destinationIso2 ?? ""] || destinationIso2}
+                    </span>
+                  </div>
+
+                  {/* One-time status */}
+                  {visaLoading && (
+                    <p className="mt-3 text-xs text-gray-700">Checking...</p>
+                  )}
+
+                  {visaError && (
+                    <p className="mt-3 text-xs text-red-700">{visaError}</p>
+                  )}
                 </div>
-
-                <span className="shrink-0 rounded-full bg-emerald-500/20 border border-emerald-700/25 px-3 py-1 text-xs font-semibold text-emerald-900">
-                  {preset.badge}
-                </span>
               </div>
-
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                <label className="text-sm font-semibold text-gray-900">
-                  Passport
-                </label>
-
-                <select
-                  value={passport}
-                  onChange={(e) => {
-                    setPassport(e.target.value as Passport);
-                    setVisaData(null);
-                    setVisaError(null);
-                  }}
-                  className="rounded-full bg-white/60 border border-black/10 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-white/75 transition focus:outline-none"
-                >
-                  <option value="UK">UK</option>
-                  <option value="EU">EU</option>
-                  <option value="Turkey">Turkey</option>
-                </select>
-
-                <button
+                {/* <button
                   onClick={handleCheckVisa}
                   className="mt-3 inline-flex items-center rounded-full bg-white/60 px-3 py-1 text-xs font-semibold text-gray-900 hover:bg-white/80"
                 >
@@ -244,20 +281,21 @@ export default function ResultsSidebar({
                       <p className="text-emerald-800">Visa info received ✅</p>
                     )}
                   </div>
-                )}
+                )} */}
 
                 {visaData?.raw?.message && (
                   <p className="mt-1 text-xs text-gray-700">
                     {visaData.raw.message}
                   </p>
                 )}
-
-                <button
-                  className="rounded-full bg-white/25 border border-black/10 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-white/40 transition"
-                  onClick={() => alert("Open official source later")}
+                <a
+                  href={sherpaUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center rounded-full bg-white/70 px-4 py-2 text-sm font-semibold hover:bg-white"
                 >
                   Official source →
-                </button>
+                </a>
               </div>
             </div>
 
