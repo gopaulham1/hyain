@@ -4,23 +4,23 @@ import { useMemo, useState } from "react";
 
 type Passport = "UK" | "EU" | "Turkey";
 
-const CITY_TO_ISO3: Record<string, string> = {
-  paris: "FRA",
-  rome: "ITA",
-  barcelona: "ESP",
-  amsterdam: "NLD",
-  prague: "CZE",
-  vienna: "AUT",
-  berlin: "DEU",
-  lisbon: "PRT",
-  athens: "GRC",
-  dubai: "ARE",
-  marrakech: "MAR",
+const CITY_TO_ISO2: Record<string, string> = {
+  paris: "FR",
+  rome: "IT",
+  barcelona: "ES",
+  amsterdam: "NL",
+  prague: "CZ",
+  vienna: "AT",
+  berlin: "DE",
+  lisbon: "PT",
+  athens: "GR",
+  dubai: "AE",
+  marrakech: "MA",
 };
 
-function cityToIso3(city: string) {
+function cityToIso2(city: string) {
   const key = city.trim().toLowerCase();
-  return CITY_TO_ISO3[key] ?? null;
+  return CITY_TO_ISO2[key] ?? null;
 }
 
 function SideRow({
@@ -112,17 +112,22 @@ export default function ResultsSidebar({
     [],
   );
 
-  const destinationIso3 = useMemo(() => cityToIso3(toCity), [toCity]);
+  const destinationIso2 = useMemo(() => cityToIso2(toCity), [toCity]);
 
   const [passport, setPassport] = useState<Passport>("UK");
   // --- Visa API state ---
-  const [passportIso3, setPassportIso3] = useState<"GBR" | "TUR">("GBR");
+  const passportIso2 = useMemo(() => {
+    if (passport === "UK") return "GB";
+    if (passport === "Turkey") return "TR";
+    // EU is a placeholder in your UI, pick a default for MVP
+    return "FR";
+  }, [passport]);
   const [visaLoading, setVisaLoading] = useState(false);
   const [visaError, setVisaError] = useState<string | null>(null);
   const [visaData, setVisaData] = useState<any>(null);
 
   async function handleCheckVisa() {
-    if (!destinationIso3) {
+    if (!destinationIso2) {
       setVisaError("Destination not supported yet.");
       setVisaData(null);
       return;
@@ -135,8 +140,8 @@ export default function ResultsSidebar({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        passport: passportIso3,
-        destination: destinationIso3,
+        passport: passportIso2,
+        destination: destinationIso2,
       }),
     });
 
@@ -144,14 +149,14 @@ export default function ResultsSidebar({
     setVisaLoading(false);
 
     if (!json.ok) {
-      setVisaError("Couldn’t fetch visa info right now.");
+      setVisaError(json.error || "Couldn’t fetch visa info right now.");
       setVisaData(null);
       return;
     }
 
     setVisaData(json);
   }
-
+  const preset = visaByPassport[passport] ?? visaByPassport.UK;
   return (
     <aside className="lg:col-span-5 self-start lg:sticky lg:top-6 lg:pl-2">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -163,7 +168,7 @@ export default function ResultsSidebar({
                 Visa & entry
               </h2>
               <p className="text-xs text-gray-600">
-                Dest ISO3: {destinationIso3 ?? "unknown"}
+                Dest ISO2: {destinationIso2 ?? "unknown"}
               </p>
               <p className="mt-1 text-sm text-gray-700">
                 Quick check before you book
@@ -180,23 +185,21 @@ export default function ResultsSidebar({
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-gray-900">
-                    {visaByPassport[passport].statusEmoji}{" "}
-                    {visaByPassport[passport].headline.includes("Visa required")
+                    {preset.statusEmoji}{" "}
+                    {preset.headline.includes("Visa required")
                       ? "Visa required"
                       : "Visa-free"}
                   </p>
 
                   <p className="mt-1 text-lg font-semibold text-gray-900">
-                    {visaByPassport[passport].headline}
+                    {preset.headline}
                   </p>
 
-                  <p className="mt-1 text-sm text-gray-700">
-                    {visaByPassport[passport].sub}
-                  </p>
+                  <p className="mt-1 text-sm text-gray-700">{preset.sub}</p>
                 </div>
 
                 <span className="shrink-0 rounded-full bg-emerald-500/20 border border-emerald-700/25 px-3 py-1 text-xs font-semibold text-emerald-900">
-                  {visaByPassport[passport].badge}
+                  {preset.badge}
                 </span>
               </div>
 
@@ -207,7 +210,11 @@ export default function ResultsSidebar({
 
                 <select
                   value={passport}
-                  onChange={(e) => setPassport(e.target.value as Passport)}
+                  onChange={(e) => {
+                    setPassport(e.target.value as Passport);
+                    setVisaData(null);
+                    setVisaError(null);
+                  }}
                   className="rounded-full bg-white/60 border border-black/10 px-4 py-2 text-sm font-semibold text-gray-900 hover:bg-white/75 transition focus:outline-none"
                 >
                   <option value="UK">UK</option>
@@ -227,8 +234,21 @@ export default function ResultsSidebar({
                 )}
 
                 {visaData && (
-                  <p className="mt-2 text-xs text-gray-800">
-                    Live check: OK ✅
+                  <div className="mt-2 text-xs text-gray-800 space-y-1">
+                    {visaData.raw?.error ? (
+                      <p className="text-amber-800">
+                        Couldn’t find visa info for this passport + destination.
+                        Please check official sources.
+                      </p>
+                    ) : (
+                      <p className="text-emerald-800">Visa info received ✅</p>
+                    )}
+                  </div>
+                )}
+
+                {visaData?.raw?.message && (
+                  <p className="mt-1 text-xs text-gray-700">
+                    {visaData.raw.message}
                   </p>
                 )}
 
