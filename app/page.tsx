@@ -30,8 +30,6 @@ export default function Home() {
     alt: string;
   };
 
-  // const [whatsOnCards, setWhatsOnCards] = useState<WhatsOnCard[]>([]);
-
   useEffect(() => {
     // Only auto-fill origin if user hasn't changed it manually yet
     if (!geo?.city) return;
@@ -54,12 +52,7 @@ export default function Home() {
 
   function submitSearch() {
     if (!query.trim()) return;
-
     const parsed = parseUserQuery(query);
-
-    // temporary: just to see it working
-    console.log("PARSED QUERY (home):", parsed);
-
     router.push(buildResultsUrl(parsed));
   }
 

@@ -4,6 +4,25 @@ import { useMemo, useState } from "react";
 
 type Passport = "UK" | "EU" | "Turkey";
 
+const CITY_TO_ISO3: Record<string, string> = {
+  paris: "FRA",
+  rome: "ITA",
+  barcelona: "ESP",
+  amsterdam: "NLD",
+  prague: "CZE",
+  vienna: "AUT",
+  berlin: "DEU",
+  lisbon: "PRT",
+  athens: "GRC",
+  dubai: "ARE",
+  marrakech: "MAR",
+};
+
+function cityToIso3(city: string) {
+  const key = city.trim().toLowerCase();
+  return CITY_TO_ISO3[key] ?? null;
+}
+
 function SideRow({
   title,
   subtitle,
@@ -58,7 +77,15 @@ function SideRow({
   );
 }
 
-export default function ResultsSidebar() {
+type ResultsSidebarProps = {
+  fromCity: string;
+  toCity: string;
+};
+
+export default function ResultsSidebar({
+  fromCity,
+  toCity,
+}: ResultsSidebarProps) {
   // keep this logic inside sidebar for now (zero risk refactor)
   const visaByPassport = useMemo(
     () =>
@@ -85,6 +112,8 @@ export default function ResultsSidebar() {
     [],
   );
 
+  const destinationIso3 = useMemo(() => cityToIso3(toCity), [toCity]);
+
   const [passport, setPassport] = useState<Passport>("UK");
 
   return (
@@ -97,6 +126,9 @@ export default function ResultsSidebar() {
               <h2 className="hyain-serif text-2xl font-semibold text-gray-900">
                 Visa & entry
               </h2>
+              <p className="text-xs text-gray-600">
+                Dest ISO3: {destinationIso3 ?? "unknown"}
+              </p>
               <p className="mt-1 text-sm text-gray-700">
                 Quick check before you book
               </p>

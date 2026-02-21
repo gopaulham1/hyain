@@ -64,7 +64,7 @@ export default function BuildQueryCard({
   };
 
   const REGION_OPTIONS = [
-    { key: "Europe", label: "EUROPE", img: "/images/london2.jpg" },
+    { key: "Europe", label: "EUROPE", img: "/images/london.jpg" },
     { key: "Asia", label: "ASIA", img: "/images/tokyo2.jpg" },
     { key: "USA", label: "USA", img: "/images/barcelona.jpg" },
     {

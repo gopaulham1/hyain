@@ -898,7 +898,10 @@ export default function ResultsPage() {
               </div>
 
               {/* RIGHT: sidebar */}
-              <ResultsSidebar />
+              <ResultsSidebar
+                fromCity={displayRoute.from}
+                toCity={displayRoute.to}
+              />
             </div>
           </section>
         </div>
