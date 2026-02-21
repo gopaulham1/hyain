@@ -115,6 +115,42 @@ export default function ResultsSidebar({
   const destinationIso3 = useMemo(() => cityToIso3(toCity), [toCity]);
 
   const [passport, setPassport] = useState<Passport>("UK");
+  // --- Visa API state ---
+  const [passportIso3, setPassportIso3] = useState<"GBR" | "TUR">("GBR");
+  const [visaLoading, setVisaLoading] = useState(false);
+  const [visaError, setVisaError] = useState<string | null>(null);
+  const [visaData, setVisaData] = useState<any>(null);
+
+  async function handleCheckVisa() {
+    if (!destinationIso3) {
+      setVisaError("Destination not supported yet.");
+      setVisaData(null);
+      return;
+    }
+
+    setVisaLoading(true);
+    setVisaError(null);
+
+    const res = await fetch("/api/visa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        passport: passportIso3,
+        destination: destinationIso3,
+      }),
+    });
+
+    const json = await res.json();
+    setVisaLoading(false);
+
+    if (!json.ok) {
+      setVisaError("Couldn’t fetch visa info right now.");
+      setVisaData(null);
+      return;
+    }
+
+    setVisaData(json);
+  }
 
   return (
     <aside className="lg:col-span-5 self-start lg:sticky lg:top-6 lg:pl-2">
@@ -178,6 +214,23 @@ export default function ResultsSidebar({
                   <option value="EU">EU</option>
                   <option value="Turkey">Turkey</option>
                 </select>
+
+                <button
+                  onClick={handleCheckVisa}
+                  className="mt-3 inline-flex items-center rounded-full bg-white/60 px-3 py-1 text-xs font-semibold text-gray-900 hover:bg-white/80"
+                >
+                  {visaLoading ? "Checking..." : "Check requirements"}
+                </button>
+
+                {visaError && (
+                  <p className="mt-2 text-xs text-red-700">{visaError}</p>
+                )}
+
+                {visaData && (
+                  <p className="mt-2 text-xs text-gray-800">
+                    Live check: OK ✅
+                  </p>
+                )}
 
                 <button
                   className="rounded-full bg-white/25 border border-black/10 px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-white/40 transition"
