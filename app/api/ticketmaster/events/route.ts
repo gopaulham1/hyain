@@ -27,17 +27,31 @@ export async function GET(req: Request) {
     const data = await r.json();
     const raw = data?._embedded?.events ?? [];
 
-    const events = raw.map((e: any) => {
-      const venue = e?._embedded?.venues?.[0]?.name;
-      const date = e?.dates?.start?.localDate;
-      return {
-        id: e?.id,
-        name: e?.name,
-        url: e?.url,
-        venue,
-        date,
-      };
-    });
+    const eventsRaw = raw
+      .map((e: any) => {
+        const venue = e?._embedded?.venues?.[0]?.name;
+        const date = e?.dates?.start?.localDate;
+        const name = e?.name;
+        const url = e?.url;
+        const id = e?.id;
+
+        return { id, name, url, venue, date };
+      })
+      .filter((e: any) => e?.name && e?.url);
+
+    // Remove duplicates by event name only
+    const seenNames = new Set<string>();
+
+    const events = eventsRaw
+      .filter((e: any) => {
+        const key = (e.name ?? "").toLowerCase().trim();
+        if (seenNames.has(key)) return false;
+        seenNames.add(key);
+        return true;
+      })
+      .slice(0, 3);
+
+    return NextResponse.json({ events });
 
     return NextResponse.json({ events });
   } catch {

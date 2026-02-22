@@ -10,6 +10,16 @@ type TMEvent = {
   date?: string;
 };
 
+function formatShortDate(iso?: string) {
+  if (!iso) return undefined; // so SideRow meta can be empty
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+  }).format(d); // e.g. "05 Jun"
+}
+
 const CITY_TO_ISO2: Record<string, string> = {
   london: "GB",
   manchester: "GB",
@@ -406,7 +416,7 @@ export default function ResultsSidebar({
                 <SideRow
                   key={e.id}
                   title={e.name}
-                  meta={e.date ? e.date : undefined}
+                  meta={formatShortDate(e.date)}
                   subtitle={e.venue ? e.venue : "View details"}
                   icon={<span>🎟️</span>}
                   onClick={() => window.open(e.url, "_blank")}
