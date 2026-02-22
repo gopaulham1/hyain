@@ -12,7 +12,7 @@ function shouldRejectTicketmasterEvent(e: any) {
 
   // Fast keyword blacklist (covers 95% of junk add-ons)
   const badName =
-    /\b(parking|permit|upgrade|vip|package|seat|meet\s*&?\s*greet|fast\s*track|add[-\s]?on|bundle|pass|insurance|merch|shirt|t-?shirt|voucher|gift|shuttle)\b/i.test(
+    /\b(parking|permit|upgrade|vip|package|jazz|seat|meet\s*&?\s*greet|fast\s*track|add[-\s]?on|bundle|pass|insurance|merch|shirt|t-?shirt|voucher|gift|shuttle)\b/i.test(
       name,
     );
 
@@ -155,7 +155,13 @@ export async function GET(req: Request) {
         const url = e?.url;
         const id = e?.id;
 
-        return { id, name, url, venue, date };
+        const img =
+          e?.images?.find((im: any) => im?.ratio === "3_2" && im?.width >= 300)
+            ?.url ||
+          e?.images?.find((im: any) => im?.width >= 300)?.url ||
+          e?.images?.[0]?.url;
+
+        return { id, name, url, venue, date, img };
       })
       .filter((e: any) => e?.name && e?.url);
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cityToIso2 } from "@/lib/geo/cityIso2";
+import Image from "next/image";
 
 type TMEvent = {
   id: string;
@@ -9,6 +10,7 @@ type TMEvent = {
   url: string;
   venue?: string;
   date?: string;
+  img?: string;
 };
 
 function formatShortDate(iso?: string) {
@@ -87,7 +89,7 @@ function SideRow({
       onClick={onClick}
       className={[
         "w-full text-left",
-        "rounded-2xl px-4 py-3",
+        "rounded-2xl px-4 py-4",
         "transition",
         "hover:bg-white/40 active:bg-white/55",
         "flex items-start justify-between gap-4",
@@ -108,6 +110,80 @@ function SideRow({
 
       <svg
         className="mt-1 h-5 w-5 shrink-0 text-gray-600"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          fillRule="evenodd"
+          d="M7.21 14.77a.75.75 0 0 1 .02-1.06L10.94 10 7.23 6.29a.75.75 0 1 1 1.06-1.06l4.24 4.24c.3.3.3.77 0 1.06l-4.24 4.24a.75.75 0 0 1-1.06-.01Z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </button>
+  );
+}
+
+function EventRow({
+  title,
+  meta,
+  subtitle,
+  img,
+  onClick,
+}: {
+  title: string;
+  meta?: string;
+  subtitle?: string;
+  img?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "group w-full text-left",
+        "rounded-2xl overflow-hidden",
+        "flex items-center",
+        "transition-all",
+        "hover:bg-white/40 active:bg-white/55",
+        "hover:shadow-md hover:-translate-y-[1px]",
+      ].join(" ")}
+    >
+      {/* Thumbnail */}
+      <div className="relative h-20 w-20 shrink-0">
+        {" "}
+        {img &&
+        (img?.includes("ticketm.") ||
+          img?.includes("ticketmaster") ||
+          img?.includes("universe.com")) ? (
+          <Image
+            src={img}
+            alt=""
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="64px"
+          />
+        ) : (
+          <div className="h-full w-full grid place-items-center text-lg">
+            🎟️
+          </div>
+        )}
+      </div>
+
+      {/* Text */}
+      <div className="min-w-0 flex-1 px-4 py-3">
+        <p className="font-semibold text-gray-900 truncate">{title}</p>
+        <p className="mt-1 text-sm text-gray-600">
+          {meta ? meta : null}
+          {meta && subtitle ? <span className="mx-2">•</span> : null}
+          {subtitle ? subtitle : null}
+        </p>
+      </div>
+
+      {/* Arrow */}
+      <svg
+        className="h-5 w-5 shrink-0 text-gray-600"
         viewBox="0 0 20 20"
         fill="currentColor"
         aria-hidden="true"
@@ -184,7 +260,7 @@ export default function ResultsSidebar({
   const lastVisaKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    return;
+    // return;
     const key = `${passportIso2}-${destinationIso2}`;
 
     // prevents double-call (dev fast refresh / strict mode vibes)
@@ -416,12 +492,12 @@ export default function ResultsSidebar({
               <p className="text-sm text-gray-700">No events found.</p>
             ) : (
               tmEvents.map((e) => (
-                <SideRow
+                <EventRow
                   key={e.id}
                   title={e.name}
                   meta={formatShortDate(e.date)}
                   subtitle={e.venue ? e.venue : "View details"}
-                  icon={<span>🎟️</span>}
+                  img={e.img}
                   onClick={() => window.open(e.url, "_blank")}
                 />
               ))
