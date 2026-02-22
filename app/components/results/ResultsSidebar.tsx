@@ -2,19 +2,35 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+type TMEvent = {
+  id: string;
+  name: string;
+  url: string;
+  venue?: string;
+  date?: string;
+};
+
 const CITY_TO_ISO2: Record<string, string> = {
   london: "GB",
+  manchester: "GB",
   paris: "FR",
+  nice: "FR",
   rome: "IT",
   milan: "IT",
   barcelona: "ES",
+  madrid: "ES",
   amsterdam: "NL",
+  antalya: "TR",
   berlin: "DE",
+  munich: "DE",
+  hamburg: "DE",
   beijing: "CN",
   lisbon: "PT",
   athens: "GR",
   dubai: "AE",
+  abu_dhabi: "AE",
   marrakech: "MA",
+  agadir: "MA",
   istanbul: "TR",
   chișinău: "MD",
   chisinau: "MD",
@@ -157,6 +173,7 @@ export default function ResultsSidebar({
   const lastVisaKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
+    return;
     const key = `${passportIso2}-${destinationIso2}`;
 
     // prevents double-call (dev fast refresh / strict mode vibes)
@@ -193,6 +210,38 @@ export default function ResultsSidebar({
   const sherpaUrl = `https://apply.joinsherpa.com/visa/${toSlug(
     destinationName,
   )}/${toSlug(passportName)}-citizens`;
+
+  const [tmLoading, setTmLoading] = useState(false);
+  const [tmEvents, setTmEvents] = useState<TMEvent[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      if (!toCity || toCity === "Anywhere") {
+        setTmEvents([]);
+        return;
+      }
+
+      setTmLoading(true);
+      try {
+        const r = await fetch(
+          `/api/ticketmaster/events?city=${encodeURIComponent(toCity)}`,
+        );
+        const data = await r.json();
+        if (!cancelled) setTmEvents(data?.events ?? []);
+      } catch {
+        if (!cancelled) setTmEvents([]);
+      } finally {
+        if (!cancelled) setTmLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [toCity]);
 
   return (
     <aside className="lg:col-span-5 self-start lg:sticky lg:top-6 lg:pl-2">
@@ -348,19 +397,22 @@ export default function ResultsSidebar({
           <div className="mt-3 mb-4 h-px bg-black/30" />
 
           <div className="mt-4 space-y-2 text-gray-800">
-            <SideRow
-              title="Sunny"
-              meta="Next 3 days"
-              subtitle="16°C → 18°C · light breeze"
-              icon={<span>☀️</span>}
-              onClick={() => alert("Weather panel later")}
-            />
-            <SideRow
-              title="Pack a light jacket"
-              subtitle="Evenings drop to ~10°C"
-              icon={<span>🧥</span>}
-              onClick={() => alert("Packing tips later")}
-            />
+            {tmLoading ? (
+              <p className="text-sm text-gray-700">Loading events...</p>
+            ) : tmEvents.length === 0 ? (
+              <p className="text-sm text-gray-700">No events found.</p>
+            ) : (
+              tmEvents.map((e) => (
+                <SideRow
+                  key={e.id}
+                  title={e.name}
+                  meta={e.date ? e.date : undefined}
+                  subtitle={e.venue ? e.venue : "View details"}
+                  icon={<span>🎟️</span>}
+                  onClick={() => window.open(e.url, "_blank")}
+                />
+              ))
+            )}
           </div>
         </div>
 
