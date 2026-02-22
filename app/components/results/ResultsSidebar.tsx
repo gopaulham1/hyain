@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { cityToIso2 } from "@/lib/geo/cityIso2";
 
 type TMEvent = {
   id: string;
@@ -20,36 +21,36 @@ function formatShortDate(iso?: string) {
   }).format(d); // e.g. "05 Jun"
 }
 
-const CITY_TO_ISO2: Record<string, string> = {
-  london: "GB",
-  manchester: "GB",
-  paris: "FR",
-  nice: "FR",
-  rome: "IT",
-  milan: "IT",
-  barcelona: "ES",
-  madrid: "ES",
-  amsterdam: "NL",
-  antalya: "TR",
-  berlin: "DE",
-  munich: "DE",
-  hamburg: "DE",
-  beijing: "CN",
-  lisbon: "PT",
-  athens: "GR",
-  dubai: "AE",
-  abu_dhabi: "AE",
-  marrakech: "MA",
-  agadir: "MA",
-  istanbul: "TR",
-  chișinău: "MD",
-  chisinau: "MD",
-};
+// const CITY_TO_ISO2: Record<string, string> = {
+//   london: "GB",
+//   manchester: "GB",
+//   paris: "FR",
+//   nice: "FR",
+//   rome: "IT",
+//   milan: "IT",
+//   barcelona: "ES",
+//   madrid: "ES",
+//   amsterdam: "NL",
+//   antalya: "TR",
+//   berlin: "DE",
+//   munich: "DE",
+//   hamburg: "DE",
+//   beijing: "CN",
+//   lisbon: "PT",
+//   athens: "GR",
+//   dubai: "AE",
+//   abu_dhabi: "AE",
+//   marrakech: "MA",
+//   agadir: "MA",
+//   istanbul: "TR",
+//   chișinău: "MD",
+//   chisinau: "MD",
+// };
 
-function cityToIso2(city: string) {
-  const key = city.trim().toLowerCase();
-  return CITY_TO_ISO2[key] ?? null;
-}
+// function cityToIso2(city: string) {
+//   const key = city.trim().toLowerCase();
+//   return CITY_TO_ISO2[key] ?? null;
+// }
 
 const ISO2_TO_PASSPORT_NAME: Record<string, string> = {
   GB: "British",
@@ -198,6 +199,7 @@ export default function ResultsSidebar({
     GB: "United Kingdom",
     FR: "France",
     ES: "Spain",
+    IT: "Italy",
     AE: "United Arab Emirates",
     CN: "China",
     MD: "Moldova",
@@ -239,6 +241,7 @@ export default function ResultsSidebar({
           `/api/ticketmaster/events?city=${encodeURIComponent(toCity)}`,
         );
         const data = await r.json();
+        console.log("TM API response:", data);
         if (!cancelled) setTmEvents(data?.events ?? []);
       } catch {
         if (!cancelled) setTmEvents([]);
@@ -401,7 +404,7 @@ export default function ResultsSidebar({
         {/* Events */}
         <div className="rounded-[22px] p-6 bg-white/70 border border-white/45 backdrop-blur-m shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)]">
           <h2 className="hyain-serif text-2xl font-semibold text-gray-900">
-            Events
+            Live from {toCity}!
           </h2>
 
           <div className="mt-3 mb-4 h-px bg-black/30" />
