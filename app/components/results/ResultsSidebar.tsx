@@ -52,12 +52,16 @@ function SideRow({
   meta,
   icon,
   onClick,
+  bigIcon,
+  flushLeft,
 }: {
   title: string;
   subtitle?: string;
   meta?: string;
   icon?: React.ReactNode;
   onClick?: () => void;
+  bigIcon?: boolean;
+  flushLeft?: boolean;
 }) {
   return (
     <button
@@ -65,27 +69,56 @@ function SideRow({
       onClick={onClick}
       className={[
         "w-full text-left",
-        "rounded-2xl px-3 py-2",
+        "rounded-2xl",
         "transition",
         "hover:bg-white/40 active:bg-white/55",
-        "flex items-start justify-between gap-4",
+        flushLeft
+          ? "overflow-hidden flex items-center justify-between"
+          : "px-4 py-3 flex items-start justify-between gap-4",
       ].join(" ")}
     >
-      <div className="min-w-0">
-        <div className="flex items-center gap-2">
-          {icon ? <span className="shrink-0">{icon}</span> : null}
-          <p className="font-semibold text-gray-900 truncate">{title}</p>
+      {flushLeft ? (
+        <>
+          {/* Left icon badge (flush + pilled) */}
+          {icon ? (
+            <div className="shrink-0 pr-3">
+              <div className="h-14 w-14 rounded-2xl bg-white/60 backdrop-blur-sm border border-black/10 grid place-items-center text-4xl shadow-sm">
+                {icon}
+              </div>
+            </div>
+          ) : null}
+
+          {/* Text block */}
+          <div className="min-w-0 flex-1 px-4 py-3">
+            <p className="font-semibold text-gray-900 truncate">{title}</p>
+            {meta ? <p className="mt-1 text-sm text-gray-600">{meta}</p> : null}
+            {subtitle ? (
+              <p className="mt-1 text-sm text-gray-700">{subtitle}</p>
+            ) : null}
+          </div>
+        </>
+      ) : (
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            {icon ? <span className="shrink-0">{icon}</span> : null}
+            <p className="font-semibold text-gray-900 truncate">{title}</p>
+          </div>
+
+          {meta ? <p className="mt-0.5 text-xs text-gray-600">{meta}</p> : null}
+
+          {subtitle ? (
+            <p className="mt-1 text-sm text-gray-700">{subtitle}</p>
+          ) : null}
         </div>
+      )}
 
-        {meta ? <p className="mt-0.5 text-xs text-gray-600">{meta}</p> : null}
-
-        {subtitle ? (
-          <p className="mt-1 text-sm text-gray-700">{subtitle}</p>
-        ) : null}
-      </div>
-
+      {/* Arrow */}
       <svg
-        className="mt-1 h-5 w-5 shrink-0 text-gray-600"
+        className={
+          flushLeft
+            ? "h-5 w-5 shrink-0 text-gray-600 mr-3 self-center"
+            : "mt-1 h-5 w-5 shrink-0 text-gray-600"
+        }
         viewBox="0 0 20 20"
         fill="currentColor"
         aria-hidden="true"
@@ -252,6 +285,7 @@ export default function ResultsSidebar({
     ES: "Spain",
     IT: "Italy",
     BE: "Belgium",
+    MA: "Morocco",
     NL: "Netherlands",
     AE: "United Arab Emirates",
     DE: "Germany",
@@ -438,19 +472,14 @@ export default function ResultsSidebar({
         <div className="rounded-[22px] p-6 bg-white/70 border border-white/45 backdrop-blur-m shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)] sm:h-[360px] overflow-hidden flex flex-col">
           {" "}
           <h2 className="hyain-serif text-2xl font-semibold text-gray-900">
-            Destination Info
+            {toCity} Info
           </h2>
           <div className="mt-3 mb-3 h-px bg-black/30" />
           <div className="space-y-1.5 text-gray-800 overflow-auto flex-1">
             {" "}
             <SideRow
-              title={
-                weatherLoading
-                  ? "Weather"
-                  : weatherToday
-                    ? `${weatherToday.emoji}  Weather today`
-                    : "Weather"
-              }
+              flushLeft
+              title={weatherToday ? "Weather today" : "Weather"}
               meta={
                 weatherToday
                   ? `High ${weatherToday.max ?? "–"}° • Low ${weatherToday.min ?? "–"}°`
@@ -459,12 +488,9 @@ export default function ResultsSidebar({
               subtitle={
                 weatherLoading
                   ? "Fetching forecast..."
-                  : weatherToday
-                    ? weatherToday.label
-                    : "Couldn’t load right now"
+                  : (weatherToday?.label ?? "Couldn’t load right now")
               }
-              icon={<span>🌦️</span>}
-              onClick={() => {}}
+              icon={<span>{weatherToday?.emoji ?? "🌦️"}</span>}
             />
             <SideRow
               title="Art exhibits close early"
