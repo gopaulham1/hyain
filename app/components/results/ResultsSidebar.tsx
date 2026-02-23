@@ -13,6 +13,13 @@ type TMEvent = {
   img?: string;
 };
 
+type WeatherToday = {
+  max: number | null;
+  min: number | null;
+  label: string;
+  emoji: string;
+};
+
 function formatShortDate(iso?: string) {
   if (!iso) return undefined; // so SideRow meta can be empty
   const d = new Date(iso);
@@ -22,37 +29,6 @@ function formatShortDate(iso?: string) {
     month: "short",
   }).format(d); // e.g. "05 Jun"
 }
-
-// const CITY_TO_ISO2: Record<string, string> = {
-//   london: "GB",
-//   manchester: "GB",
-//   paris: "FR",
-//   nice: "FR",
-//   rome: "IT",
-//   milan: "IT",
-//   barcelona: "ES",
-//   madrid: "ES",
-//   amsterdam: "NL",
-//   antalya: "TR",
-//   berlin: "DE",
-//   munich: "DE",
-//   hamburg: "DE",
-//   beijing: "CN",
-//   lisbon: "PT",
-//   athens: "GR",
-//   dubai: "AE",
-//   abu_dhabi: "AE",
-//   marrakech: "MA",
-//   agadir: "MA",
-//   istanbul: "TR",
-//   chișinău: "MD",
-//   chisinau: "MD",
-// };
-
-// function cityToIso2(city: string) {
-//   const key = city.trim().toLowerCase();
-//   return CITY_TO_ISO2[key] ?? null;
-// }
 
 const ISO2_TO_PASSPORT_NAME: Record<string, string> = {
   GB: "British",
@@ -89,7 +65,7 @@ function SideRow({
       onClick={onClick}
       className={[
         "w-full text-left",
-        "rounded-2xl px-4 py-4",
+        "rounded-2xl px-3 py-2",
         "transition",
         "hover:bg-white/40 active:bg-white/55",
         "flex items-start justify-between gap-4",
@@ -212,13 +188,12 @@ export default function ResultsSidebar({
 
   const passportLabel = ISO2_TO_PASSPORT_NAME[passportIso2] ?? passportIso2;
 
-  // const passportLabel = ISO2_TO_PASSPORT_NAME[passportIso2] ?? passportIso2;
-  // const destinationIso2 = useMemo(() => cityToIso2(toCity), [toCity]);
-  // const passportIso2 = useMemo(() => cityToIso2(fromCity) ?? "GB", [fromCity]);
-
   const [visaLoading, setVisaLoading] = useState(false);
   const [visaError, setVisaError] = useState<string | null>(null);
   const [visaData, setVisaData] = useState<any>(null);
+
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherToday, setWeatherToday] = useState<WeatherToday | null>(null);
 
   const visaRequired = !!visaData?.visaRequired;
 
@@ -260,7 +235,7 @@ export default function ResultsSidebar({
   const lastVisaKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // return;
+    return;
     const key = `${passportIso2}-${destinationIso2}`;
 
     // prevents double-call (dev fast refresh / strict mode vibes)
@@ -276,7 +251,11 @@ export default function ResultsSidebar({
     FR: "France",
     ES: "Spain",
     IT: "Italy",
+    BE: "Belgium",
+    NL: "Netherlands",
     AE: "United Arab Emirates",
+    DE: "Germany",
+    RU: "Russia",
     CN: "China",
     MD: "Moldova",
     TR: "Turkey",
@@ -332,11 +311,47 @@ export default function ResultsSidebar({
     };
   }, [toCity]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadWeather() {
+      if (!toCity || toCity === "Anywhere") {
+        setWeatherToday(null);
+        return;
+      }
+
+      setWeatherLoading(true);
+      try {
+        const r = await fetch(
+          `/api/weather?city=${encodeURIComponent(toCity)}`,
+        );
+        const data = await r.json();
+
+        if (!cancelled && data?.ok) {
+          setWeatherToday(data.today ?? null);
+        }
+        if (!cancelled && !data?.ok) {
+          setWeatherToday(null);
+        }
+      } catch {
+        if (!cancelled) setWeatherToday(null);
+      } finally {
+        if (!cancelled) setWeatherLoading(false);
+      }
+    }
+
+    loadWeather();
+    return () => {
+      cancelled = true;
+    };
+  }, [toCity]);
+
   return (
     <aside className="lg:col-span-5 self-start lg:sticky lg:top-6 lg:pl-2">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {/* Visa */}
-        <div className="rounded-[22px] p-6 bg-white/70 border border-white/45 backdrop-blur-m shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)]">
+        <div className="rounded-[22px] p-6 bg-white/70 border border-white/45 backdrop-blur-m shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)] sm:h-[360px] overflow-hidden flex flex-col">
+          {" "}
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="hyain-serif text-2xl font-semibold text-gray-900">
@@ -351,8 +366,8 @@ export default function ResultsSidebar({
               Beta
             </span>
           </div>
-
-          <div className="mt-4 space-y-3 text-gray-800">
+          <div className="mt-4 space-y-3 text-gray-800 overflow-auto flex-1">
+            {" "}
             <div
               className={`rounded-2xl border p-4 backdrop-blur-2xl ${visaTintClasses}`}
             >
@@ -397,30 +412,6 @@ export default function ResultsSidebar({
                 </div>
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-2">
-                {/* <button
-                  onClick={handleCheckVisa}
-                  className="mt-3 inline-flex items-center rounded-full bg-white/60 px-3 py-1 text-xs font-semibold text-gray-900 hover:bg-white/80"
-                >
-                  {visaLoading ? "Checking..." : "Check requirements"}
-                </button>
-
-                {visaError && (
-                  <p className="mt-2 text-xs text-red-700">{visaError}</p>
-                )}
-
-                {visaData && (
-                  <div className="mt-2 text-xs text-gray-800 space-y-1">
-                    {visaData.raw?.error ? (
-                      <p className="text-amber-800">
-                        Couldn’t find visa info for this passport + destination.
-                        Please check official sources.
-                      </p>
-                    ) : (
-                      <p className="text-emerald-800">Visa info received ✅</p>
-                    )}
-                  </div>
-                )} */}
-
                 {visaData?.raw?.message && (
                   <p className="mt-1 text-xs text-gray-700">
                     {visaData.raw.message}
@@ -436,7 +427,6 @@ export default function ResultsSidebar({
                 </a>
               </div>
             </div>
-
             <p className="text-xs text-gray-600 pt-2 border-t border-black/10">
               This is guidance, not legal advice. Always confirm with official
               sources.
@@ -445,29 +435,43 @@ export default function ResultsSidebar({
         </div>
 
         {/* Destination info */}
-        <div className="rounded-[22px] p-6 bg-white/70 border border-white/45 backdrop-blur-m shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)]">
+        <div className="rounded-[22px] p-6 bg-white/70 border border-white/45 backdrop-blur-m shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)] sm:h-[360px] overflow-hidden flex flex-col">
+          {" "}
           <h2 className="hyain-serif text-2xl font-semibold text-gray-900">
             Destination Info
           </h2>
-
-          <div className="mt-3 mb-4 h-px bg-black/30" />
-
-          <div className="mt-4 space-y-2 text-gray-800">
+          <div className="mt-3 mb-3 h-px bg-black/30" />
+          <div className="space-y-1.5 text-gray-800 overflow-auto flex-1">
+            {" "}
             <SideRow
-              title="Cannes Film Festival"
-              meta="May 14 – May 25"
-              subtitle="Official screenings • tickets • day trips"
-              icon={<span>🌍</span>}
-              onClick={() => alert("Open Cannes panel")}
+              title={
+                weatherLoading
+                  ? "Weather"
+                  : weatherToday
+                    ? `${weatherToday.emoji}  Weather today`
+                    : "Weather"
+              }
+              meta={
+                weatherToday
+                  ? `High ${weatherToday.max ?? "–"}° • Low ${weatherToday.min ?? "–"}°`
+                  : undefined
+              }
+              subtitle={
+                weatherLoading
+                  ? "Fetching forecast..."
+                  : weatherToday
+                    ? weatherToday.label
+                    : "Couldn’t load right now"
+              }
+              icon={<span>🌦️</span>}
+              onClick={() => {}}
             />
-
             <SideRow
               title="Art exhibits close early"
               subtitle="Louvre & Musée d’Orsay close at 5pm"
               icon={<span>⚠️</span>}
               onClick={() => alert("Open museum passes")}
             />
-
             <SideRow
               title="Skip-the-line museum passes"
               subtitle="Popular slots sell out quickly"

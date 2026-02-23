@@ -12,7 +12,7 @@ function shouldRejectTicketmasterEvent(e: any) {
 
   // Fast keyword blacklist (covers 95% of junk add-ons)
   const badName =
-    /\b(parking|permit|upgrade|vip|package|jazz|seat|meet\s*&?\s*greet|fast\s*track|add[-\s]?on|bundle|pass|insurance|merch|shirt|t-?shirt|voucher|gift|shuttle)\b/i.test(
+    /\b(parking|permit|upgrade|vip|package|club|jazz|seat|meet\s*&?\s*greet|fast\s*track|add[-\s]?on|bundle|pass|insurance|merch|shirt|t-?shirt|voucher|gift|shuttle)\b/i.test(
       name,
     );
 
