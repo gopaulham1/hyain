@@ -30,6 +30,11 @@ function formatShortDate(iso?: string) {
   }).format(d); // e.g. "05 Jun"
 }
 
+function formatFxRate(n: number) {
+  // nice readable rate: 4.957 -> 4.96, 23.1107 -> 23.11
+  return n >= 10 ? n.toFixed(2) : n.toFixed(3);
+}
+
 const ISO2_TO_PASSPORT_NAME: Record<string, string> = {
   GB: "British",
   MD: "Moldovan",
@@ -39,6 +44,7 @@ const ISO2_TO_PASSPORT_NAME: Record<string, string> = {
   AE: "Emirati",
   CN: "China",
   IT: "Italian",
+  RU: "Russian",
   NL: "Dutch",
   DE: "German",
   PT: "Portuguese",
@@ -228,6 +234,9 @@ export default function ResultsSidebar({
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherToday, setWeatherToday] = useState<WeatherToday | null>(null);
 
+  const [fxData, setFxData] = useState<any>(null);
+  const [fxLoading, setFxLoading] = useState(false);
+
   const visaRequired = !!visaData?.visaRequired;
 
   const visaTintClasses = visaRequired
@@ -339,7 +348,7 @@ export default function ResultsSidebar({
       }
     }
 
-    load();
+    // load();
     return () => {
       cancelled = true;
     };
@@ -379,6 +388,38 @@ export default function ResultsSidebar({
       cancelled = true;
     };
   }, [toCity]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadFx() {
+      if (!fromCity || !toCity || toCity === "Anywhere") {
+        setFxData(null);
+        return;
+      }
+
+      setFxLoading(true);
+      try {
+        const r = await fetch(
+          `/api/fx?from=${encodeURIComponent(fromCity)}&to=${encodeURIComponent(toCity)}`,
+          { cache: "no-store" },
+        );
+        const data = await r.json();
+
+        if (!cancelled && data?.ok) setFxData(data);
+        if (!cancelled && !data?.ok) setFxData(null);
+      } catch {
+        if (!cancelled) setFxData(null);
+      } finally {
+        if (!cancelled) setFxLoading(false);
+      }
+    }
+
+    loadFx();
+    return () => {
+      cancelled = true;
+    };
+  }, [fromCity, toCity]);
 
   return (
     <aside className="lg:col-span-5 self-start lg:sticky lg:top-6 lg:pl-2">
@@ -455,15 +496,14 @@ export default function ResultsSidebar({
                   href={sherpaUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center rounded-full bg-white/70 px-4 py-2 text-sm font-semibold hover:bg-white"
+                  className="inline-flex items-center rounded-full bg-white/70 px-4 py-2 text-xs font-semibold hover:bg-white"
                 >
                   Official source →
                 </a>
               </div>
             </div>
             <p className="text-xs text-gray-600 pt-2 border-t border-black/10">
-              This is guidance, not legal advice. Always confirm with official
-              sources.
+              This is guidance, not legal advice
             </p>
           </div>
         </div>
@@ -493,10 +533,21 @@ export default function ResultsSidebar({
               icon={<span>{weatherToday?.emoji ?? "🌦️"}</span>}
             />
             <SideRow
-              title="Art exhibits close early"
-              subtitle="Louvre & Musée d’Orsay close at 5pm"
-              icon={<span>⚠️</span>}
-              onClick={() => alert("Open museum passes")}
+              flushLeft
+              title="Currency"
+              meta={
+                fxData?.ok && typeof fxData?.rate === "number"
+                  ? `1 ${fxData.fromCurrency} = ${formatFxRate(fxData.rate)} ${fxData.toCurrency}`
+                  : undefined
+              }
+              subtitle={
+                fxLoading
+                  ? "Fetching exchange rate..."
+                  : fxData?.ok
+                    ? `Updated ${fxData.date ?? "recently"}`
+                    : "Couldn’t load right now"
+              }
+              icon={<span>💱</span>}
             />
             <SideRow
               title="Skip-the-line museum passes"

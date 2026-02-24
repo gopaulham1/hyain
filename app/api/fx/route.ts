@@ -62,25 +62,60 @@ export async function GET(req: Request) {
       countryCodeToCurrency(toCountry),
     ]);
 
-    // 3) currency -> currency rate
-    const fxUrl = `https://api.frankfurter.dev/latest?from=${encodeURIComponent(
+    // --- FX RATE (provider 1: Frankfurter) ---
+    const fxUrl = `https://api.frankfurter.app/latest?from=${encodeURIComponent(
       fromCurrency,
     )}&to=${encodeURIComponent(toCurrency)}`;
 
-    const fxRes = await fetch(fxUrl, { next: { revalidate: 60 * 60 } });
-    if (!fxRes.ok) {
-      return NextResponse.json(
-        { ok: false, error: "FX provider failed" },
-        { status: 502 },
-      );
+    let rate: number | null = null;
+    let fxDate: string | null = null;
+    let provider: "frankfurter" | "currency-api" = "frankfurter";
+
+    try {
+      const fxRes = await fetch(fxUrl, { cache: "no-store" });
+
+      if (fxRes.ok) {
+        const fxJson = await fxRes.json();
+        const maybeRate = fxJson?.rates?.[toCurrency];
+        if (typeof maybeRate === "number") {
+          rate = maybeRate;
+          fxDate = fxJson?.date ?? null;
+        }
+      }
+    } catch {
+      // ignore and fallback below
     }
 
-    const fxJson = (await fxRes.json()) as {
-      date?: string;
-      rates?: Record<string, number>;
-    };
+    // --- FX RATE (fallback provider) ---
+    if (rate === null) {
+      provider = "currency-api";
 
-    const rate = fxJson?.rates?.[toCurrency];
+      const fromLower = fromCurrency.toLowerCase();
+      const toLower = toCurrency.toLowerCase();
+
+      const fallbackUrl = `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/${fromLower}.json`;
+
+      const fbRes = await fetch(fallbackUrl, { cache: "no-store" });
+      if (!fbRes.ok) {
+        return NextResponse.json(
+          { ok: false, error: "FX provider failed (both providers)" },
+          { status: 502 },
+        );
+      }
+
+      const fbJson = await fbRes.json();
+      const maybeRate = fbJson?.[fromLower]?.[toLower];
+
+      if (typeof maybeRate !== "number") {
+        return NextResponse.json(
+          { ok: false, error: "No rate returned (both providers)" },
+          { status: 502 },
+        );
+      }
+
+      rate = maybeRate;
+      fxDate = fbJson?.date ?? null;
+    }
 
     if (typeof rate !== "number") {
       return NextResponse.json(
@@ -98,7 +133,8 @@ export async function GET(req: Request) {
       fromCurrency,
       toCurrency,
       rate,
-      date: fxJson.date ?? "",
+      date: fxDate,
+      provider,
     });
   } catch (e) {
     return NextResponse.json(

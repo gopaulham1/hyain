@@ -9,6 +9,7 @@ export const CITY_TO_ISO2: Record<string, string> = {
   madrid: "ES",
   amsterdam: "NL",
   antalya: "TR",
+  moscow: "RU",
   berlin: "DE",
   munich: "DE",
   hamburg: "DE",
