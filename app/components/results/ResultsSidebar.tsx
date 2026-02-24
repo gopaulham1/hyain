@@ -95,7 +95,7 @@ function SideRow({
           ) : null}
 
           {/* Text block */}
-          <div className="min-w-0 flex-1 px-4 py-3">
+          <div className="min-w-0 flex-1 px-4 py-1">
             <p className="font-semibold text-gray-900 truncate">{title}</p>
             {meta ? <p className="mt-1 text-sm text-gray-600">{meta}</p> : null}
             {subtitle ? (
