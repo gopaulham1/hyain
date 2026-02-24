@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cityToIso2 } from "@/lib/geo/cityIso2";
+import { getTriviaFact } from "@/data/cityTrivia";
+import { Info } from "lucide-react";
 import Image from "next/image";
 
 type TMEvent = {
@@ -95,11 +97,13 @@ function SideRow({
           ) : null}
 
           {/* Text block */}
-          <div className="min-w-0 flex-1 px-4 py-1">
+          <div className="min-w-0 flex-1 pr-4 py-1">
             <p className="font-semibold text-gray-900 truncate">{title}</p>
             {meta ? <p className="mt-1 text-sm text-gray-600">{meta}</p> : null}
             {subtitle ? (
-              <p className="mt-1 text-sm text-gray-700">{subtitle}</p>
+              <p className="mt-1 text-sm leading-snug text-gray-700">
+                {subtitle}
+              </p>
             ) : null}
           </div>
         </>
@@ -119,22 +123,25 @@ function SideRow({
       )}
 
       {/* Arrow */}
-      <svg
-        className={
-          flushLeft
-            ? "h-5 w-5 shrink-0 text-gray-600 mr-3 self-center"
-            : "mt-1 h-5 w-5 shrink-0 text-gray-600"
-        }
-        viewBox="0 0 20 20"
-        fill="currentColor"
-        aria-hidden="true"
-      >
-        <path
-          fillRule="evenodd"
-          d="M7.21 14.77a.75.75 0 0 1 .02-1.06L10.94 10 7.23 6.29a.75.75 0 1 1 1.06-1.06l4.24 4.24c.3.3.3.77 0 1.06l-4.24 4.24a.75.75 0 0 1-1.06-.01Z"
-          clipRule="evenodd"
-        />
-      </svg>
+      {/* Arrow (only for clickable rows) */}
+      {onClick ? (
+        <svg
+          className={
+            flushLeft
+              ? "h-5 w-5 shrink-0 text-gray-600 mr-3 self-center"
+              : "mt-1 h-5 w-5 shrink-0 text-gray-600"
+          }
+          viewBox="0 0 20 20"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            fillRule="evenodd"
+            d="M7.21 14.77a.75.75 0 0 1 .02-1.06L10.94 10 7.23 6.29a.75.75 0 1 1 1.06-1.06l4.24 4.24c.3.3.3.77 0 1.06l-4.24 4.24a.75.75 0 0 1-1.06-.01Z"
+            clipRule="evenodd"
+          />
+        </svg>
+      ) : null}
     </button>
   );
 }
@@ -165,29 +172,32 @@ function EventRow({
         "hover:shadow-md hover:-translate-y-[1px]",
       ].join(" ")}
     >
-      {/* Thumbnail */}
-      <div className="relative h-20 w-20 shrink-0">
-        {" "}
-        {img &&
-        (img?.includes("ticketm.") ||
-          img?.includes("ticketmaster") ||
-          img?.includes("universe.com")) ? (
-          <Image
-            src={img}
-            alt=""
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="64px"
-          />
-        ) : (
-          <div className="h-full w-full grid place-items-center text-lg">
-            🎟️
-          </div>
-        )}
+      {/* Thumbnail (pilled badge like destination icons) */}
+      <div className="shrink-0 pr-3">
+        <div className="h-14 w-14 rounded-2xl bg-white/60 backdrop-blur-sm border border-black/10 shadow-sm overflow-hidden grid place-items-center">
+          {img &&
+          (img.includes("ticketm.") ||
+            img.includes("ticketmaster") ||
+            img.includes("universe.com")) ? (
+            <div className="relative h-full w-full">
+              <Image
+                src={img}
+                alt=""
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="56px"
+              />
+            </div>
+          ) : (
+            <div className="h-full w-full grid place-items-center text-xl">
+              🎟️
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Text */}
-      <div className="min-w-0 flex-1 px-4 py-3">
+      <div className="min-w-0 flex-1 pr-4 py-3">
         <p className="font-semibold text-gray-900 truncate">{title}</p>
         <p className="mt-1 text-sm text-gray-600">
           {meta ? meta : null}
@@ -236,6 +246,8 @@ export default function ResultsSidebar({
 
   const [fxData, setFxData] = useState<any>(null);
   const [fxLoading, setFxLoading] = useState(false);
+
+  const trivia = useMemo(() => getTriviaFact(toCity), [toCity]);
 
   const visaRequired = !!visaData?.visaRequired;
 
@@ -348,7 +360,7 @@ export default function ResultsSidebar({
       }
     }
 
-    // load();
+    load();
     return () => {
       cancelled = true;
     };
@@ -547,14 +559,30 @@ export default function ResultsSidebar({
                     ? `Updated ${fxData.date ?? "recently"}`
                     : "Couldn’t load right now"
               }
-              icon={<span>💱</span>}
+              icon={
+                <Image
+                  src="/icons/currency.svg"
+                  alt="Currency"
+                  width={32}
+                  height={32}
+                />
+              }
             />
-            <SideRow
-              title="Skip-the-line museum passes"
-              subtitle="Popular slots sell out quickly"
-              icon={<span>🎟️</span>}
-              onClick={() => alert("Open tickets")}
-            />
+            {trivia ? (
+              <SideRow
+                flushLeft
+                title={`${toCity} is home to...`}
+                subtitle={trivia}
+                icon={
+                  <Image
+                    src="/icons/info.svg"
+                    alt="Info"
+                    width={32}
+                    height={32}
+                  />
+                }
+              />
+            ) : null}
           </div>
         </div>
 
