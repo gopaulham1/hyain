@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cityToIso2 } from "@/lib/geo/cityIso2";
 import { getTriviaFact } from "@/data/cityTrivia";
-import { Info } from "lucide-react";
+import { getToursForCity } from "@/data/toursByCity";
 import Image from "next/image";
 
 type TMEvent = {
@@ -159,6 +159,12 @@ function EventRow({
   img?: string;
   onClick?: () => void;
 }) {
+  const canRenderImage =
+    !!img &&
+    (img.startsWith("/") ||
+      img.includes("ticketm.") ||
+      img.includes("ticketmaster") ||
+      img.includes("universe.com"));
   return (
     <button
       type="button"
@@ -175,13 +181,10 @@ function EventRow({
       {/* Thumbnail (pilled badge like destination icons) */}
       <div className="shrink-0 pr-3">
         <div className="h-14 w-14 rounded-2xl bg-white/60 backdrop-blur-sm border border-black/10 shadow-sm overflow-hidden grid place-items-center">
-          {img &&
-          (img.includes("ticketm.") ||
-            img.includes("ticketmaster") ||
-            img.includes("universe.com")) ? (
+          {canRenderImage ? (
             <div className="relative h-full w-full">
               <Image
-                src={img}
+                src={img!}
                 alt=""
                 fill
                 className="object-cover transition-transform duration-500 group-hover:scale-105"
@@ -248,6 +251,7 @@ export default function ResultsSidebar({
   const [fxLoading, setFxLoading] = useState(false);
 
   const trivia = useMemo(() => getTriviaFact(toCity), [toCity]);
+  const tours = useMemo(() => getToursForCity(toCity, 3), [toCity]);
 
   const visaRequired = !!visaData?.visaRequired;
 
@@ -289,7 +293,7 @@ export default function ResultsSidebar({
   const lastVisaKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    return;
+    // return;
     const key = `${passportIso2}-${destinationIso2}`;
 
     // prevents double-call (dev fast refresh / strict mode vibes)
@@ -617,32 +621,31 @@ export default function ResultsSidebar({
         {/* Tours */}
         <div className="rounded-[22px] p-6 bg-white/70 border border-white/45 backdrop-blur-m shadow-[0_0_0_1px_rgba(255,255,255,0.55)_inset,0_18px_40px_rgba(0,0,0,0.12)]">
           <h2 className="hyain-serif text-2xl font-semibold text-gray-900">
-            Tours
+            Tours from {toCity}
           </h2>
 
           <div className="mt-3 mb-4 h-px bg-black/30" />
 
           <div className="mt-4 space-y-2 text-gray-800">
-            <SideRow
-              title="Hotels are up this weekend"
-              subtitle="Popular areas selling out faster"
-              icon={<span>⚠️</span>}
-              onClick={() => alert("Open hotel insight")}
-            />
-
-            <SideRow
-              title="Seine River Dinner Cruise"
-              subtitle="Romantic boat tour • view tickets"
-              icon={<span>🎵</span>}
-              onClick={() => alert("Open cruise tickets")}
-            />
-
-            <SideRow
-              title="Airport transfer tip"
-              subtitle="Late arrivals? Pre-book to avoid surge pricing"
-              icon={<span>🚕</span>}
-              onClick={() => alert("Open transfer options")}
-            />
+            {tours.length === 0 ? (
+              <p className="text-sm text-gray-700">
+                No tour picks available yet.
+              </p>
+            ) : (
+              tours.map((t) => (
+                <EventRow
+                  key={t.id}
+                  title={t.title}
+                  meta={t.pill}
+                  subtitle={t.subtitle}
+                  img={t.img}
+                  onClick={() => {
+                    // const slug = toCity.toLowerCase().replace(/\s+/g, "-");
+                    window.open(t.viator_link, "_blank");
+                  }}
+                />
+              ))
+            )}
           </div>
         </div>
       </div>
