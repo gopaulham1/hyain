@@ -128,10 +128,62 @@ function getDateRangeFromIntent(
 ): { start: Date; end: Date } | null {
   const now = new Date();
 
-  if (intent === "next_week") {
+  if (!intent) return null;
+
+  // Let dateQuery handle "month/range/date" precisely from raw query for now
+  // (we'll move those into parser later)
+  if (intent === "month" || intent === "range" || intent === "date")
+    return null;
+
+  if (intent === "today") {
     const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
     const end = new Date(now);
-    end.setDate(end.getDate() + 7);
+    end.setHours(23, 59, 59, 999);
+    return { start, end };
+  }
+
+  if (intent === "tomorrow") {
+    const t = new Date(now);
+    t.setDate(t.getDate() + 1);
+    t.setHours(0, 0, 0, 0);
+    const end = new Date(t);
+    end.setHours(23, 59, 59, 999);
+    return { start: t, end };
+  }
+
+  const addDays = (d: Date, days: number) => {
+    const x = new Date(d);
+    x.setDate(x.getDate() + days);
+    return x;
+  };
+
+  if (intent === "this_week") {
+    const start = new Date(now);
+    const day = start.getDay();
+    const diff = day === 0 ? -6 : 1 - day; // monday
+    start.setDate(start.getDate() + diff);
+    start.setHours(0, 0, 0, 0);
+
+    const end = addDays(start, 7);
+    return { start, end };
+  }
+
+  if (intent === "next_week") {
+    const base = addDays(now, 7);
+    const start = new Date(base);
+    const day = start.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    start.setDate(start.getDate() + diff);
+    start.setHours(0, 0, 0, 0);
+
+    const end = addDays(start, 7);
+    return { start, end };
+  }
+
+  if (intent === "this_month") {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 1, 0, 0, 0, 0);
     return { start, end };
   }
 
@@ -149,16 +201,16 @@ function getDateRangeFromIntent(
     return { start, end };
   }
 
-  if (intent === "this_weekend") {
-    // Next Saturday 00:00 -> Monday 00:00
-    const start = new Date(now);
-    const day = start.getDay(); // Sun=0
+  if (intent === "this_weekend" || intent === "next_weekend") {
+    const base = intent === "next_weekend" ? addDays(now, 7) : now;
+
+    const start = new Date(base);
+    const day = start.getDay();
     const daysUntilSat = (6 - day + 7) % 7;
     start.setDate(start.getDate() + daysUntilSat);
     start.setHours(0, 0, 0, 0);
 
-    const end = new Date(start);
-    end.setDate(end.getDate() + 2);
+    const end = addDays(start, 2);
     return { start, end };
   }
 
@@ -260,7 +312,17 @@ export default function ResultsPage() {
     const built = parts.join(" ").trim();
 
     // ✅ ALWAYS prefer the raw query from the URL if it exists
-    return (fallback.trim() ? fallback : built) ?? "";
+    // ✅ Prefer STRUCTURED params when they exist, otherwise fallback to raw query.
+    // This makes the pipeline AI-ready (LLM can output structured fields reliably).
+    const hasStructured =
+      !!fromParam ||
+      !!toParam ||
+      !!whenParam ||
+      !!paxParam ||
+      !!tripParam ||
+      !!cabinParam;
+
+    return (hasStructured ? built : fallback).trim() || "";
   }, [
     fromParam,
     toParam,

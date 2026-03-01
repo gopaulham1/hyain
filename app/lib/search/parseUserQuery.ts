@@ -314,6 +314,45 @@ function isVibeOnlyDestination(to: string, vibes: VibeKey[]): boolean {
   return false;
 }
 
+function detectDateIntent(text: string): ParsedQuery["dateIntent"] {
+  const q = text.toLowerCase();
+
+  if (/\b(anytime|flexible)\b/.test(q)) return "flexible";
+
+  if (/\btoday\b/.test(q)) return "today";
+  if (/\btomorrow\b/.test(q)) return "tomorrow";
+
+  if (/\bthis\s+weekend\b/.test(q)) return "this_weekend";
+  if (/\bnext\s+weekend\b/.test(q)) return "next_weekend";
+
+  if (/\bthis\s+week\b/.test(q)) return "this_week";
+  if (/\bnext\s+week\b/.test(q)) return "next_week";
+
+  if (/\bthis\s+month\b/.test(q)) return "this_month";
+  if (/\bnext\s+month\b/.test(q)) return "next_month";
+
+  // month name like "March"
+  if (
+    /\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|jun(e)?|jul(y)?|aug(ust)?|sep(tember)?|oct(ober)?|nov(ember)?|dec(ember)?)\b/.test(
+      q,
+    )
+  ) {
+    return "month";
+  }
+
+  // explicit range like "4 feb - 7 feb" or "4 feb to 7 feb"
+  if (/\b\d{1,2}\s*[a-z]+\s*(?:-|to|–)\s*\d{1,2}\s*[a-z]+\b/.test(q)) {
+    return "range";
+  }
+
+  // single date like "4 feb"
+  if (/\b\d{1,2}\s*[a-z]+\b/.test(q)) {
+    return "date";
+  }
+
+  return null;
+}
+
 export function parseUserQuery(input: string): ParsedQuery {
   const raw = input;
   const normalized = normalize(input);
@@ -333,16 +372,44 @@ export function parseUserQuery(input: string): ParsedQuery {
       ? "return"
       : "oneway";
 
-  const dateIntent = null;
+  const dateIntent = detectDateIntent(normalized);
   const departDateISO = null;
   const returnDateISO = null;
 
-  // confidence heuristic (v1)
-  let confidence = 0.2;
-  if (from) confidence += 0.3;
-  if (to) confidence += 0.3;
-  if (dateIntent) confidence += 0.1;
-  if (passengers) confidence += 0.1;
+  // confidence heuristic (v2) — tuned for AI gating
+  // Idea: confidence reflects how "actionable" the query is without help.
+  // Route clarity matters most, then time, then constraints.
+  let confidence = 0.05;
+
+  const hasFrom = !!from;
+  const hasTo = !!to;
+  const hasRoute = hasFrom && hasTo;
+
+  // If destination is missing but we have vibes, it's more "discovery" than "search"
+  const hasVibes = (vibes?.length ?? 0) > 0;
+
+  // Route signals
+  if (hasRoute) confidence += 0.55;
+  else if (hasTo)
+    confidence += 0.25; // "to Paris"
+  else if (hasFrom) confidence += 0.15; // "from London" only
+
+  // Time signals
+  if (dateIntent) confidence += 0.15;
+
+  // Constraints
+  if (passengers != null) confidence += 0.05;
+  if (budget?.max != null) confidence += 0.05;
+
+  // // Trip/cabin are mild signals
+  // if (tripType && tripType !== "oneway") confidence += 0.03;
+  // if (cabin) confidence += 0.02;
+
+  // Discovery penalty: vibes with no concrete destination should not look "high confidence"
+  if (hasVibes && !hasTo) confidence -= 0.15;
+
+  // Clamp
+  confidence = Math.max(0, Math.min(1, confidence));
 
   return {
     raw,

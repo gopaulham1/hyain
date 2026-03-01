@@ -293,7 +293,7 @@ export default function ResultsSidebar({
   const lastVisaKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // return;
+    return;
     const key = `${passportIso2}-${destinationIso2}`;
 
     // prevents double-call (dev fast refresh / strict mode vibes)
@@ -364,7 +364,7 @@ export default function ResultsSidebar({
       }
     }
 
-    load();
+    // load();
     return () => {
       cancelled = true;
     };
@@ -399,7 +399,7 @@ export default function ResultsSidebar({
       }
     }
 
-    loadWeather();
+    // loadWeather();
     return () => {
       cancelled = true;
     };
@@ -431,7 +431,7 @@ export default function ResultsSidebar({
       }
     }
 
-    loadFx();
+    // loadFx();
     return () => {
       cancelled = true;
     };

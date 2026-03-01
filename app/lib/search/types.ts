@@ -1,9 +1,16 @@
 export type DateIntent =
-  | "exact"
+  | "today"
+  | "tomorrow"
+  | "this_week"
   | "next_week"
-  | "next_month"
   | "this_weekend"
+  | "next_weekend"
+  | "this_month"
+  | "next_month"
   | "flexible"
+  | "month"
+  | "range"
+  | "date"
   | null;
 
 export type TripType = "oneway" | "return" | null;

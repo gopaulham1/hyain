@@ -82,14 +82,7 @@ export async function GET(req: Request) {
     // const r = await fetch(url, { next: { revalidate: 60 * 30 } }); // cache 30 mins
     const r = await fetch(url, { cache: "no-store" });
 
-    console.log("TM URL:", url);
-    console.log("TM status:", r.status);
-
     let data = await r.json();
-
-    console.log("TM errors:", data?.errors);
-    console.log("TM page:", data?.page);
-    console.log("TM embedded events:", data?._embedded?.events?.length ?? 0);
 
     if (!r.ok) {
       return NextResponse.json({
@@ -121,13 +114,8 @@ export async function GET(req: Request) {
       const fallbackParams = new URLSearchParams(fallbackParamsObj);
       const fallbackUrl = `https://app.ticketmaster.com/discovery/v2/events.json?${fallbackParams.toString()}`;
 
-      console.log("TM fallback URL:", fallbackUrl);
-
       const r2 = await fetch(fallbackUrl, { cache: "no-store" });
       const data2 = await r2.json();
-
-      console.log("TM fallback status:", r2.status);
-      console.log("TM fallback errors:", data2?.errors);
 
       // swap to fallback results
       if (r2.ok) {
@@ -135,16 +123,6 @@ export async function GET(req: Request) {
         raw = data2?._embedded?.events ?? [];
       }
     }
-
-    console.log("TM raw count:", raw.length);
-    console.log(
-      "TM sample:",
-      raw.slice(0, 4).map((e: any) => ({
-        name: e?.name,
-        url: e?.url,
-        city: e?._embedded?.venues?.[0]?.city?.name,
-      })),
-    );
 
     const eventsRaw = raw
       .filter((e: any) => !shouldRejectTicketmasterEvent(e))
