@@ -1,10 +1,30 @@
 import { NextResponse } from "next/server";
 import { parseUserQuery } from "@/lib/search/parseUserQuery";
 
-export function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const query = searchParams.get("query")?.trim() ?? "";
+
+  if (!query) {
+    return NextResponse.json(
+      { ok: false, error: "Missing query" },
+      { status: 400 },
+    );
+  }
+
+  const parsed = parseUserQuery(query);
+  const AI_THRESHOLD = 0.55;
+
+  if (parsed.confidence >= AI_THRESHOLD) {
+    return NextResponse.json({
+      parsed,
+      source: "rule-based",
+    });
+  }
+
   return NextResponse.json({
-    ok: true,
-    message: "Use POST with { query: string }",
+    parsed,
+    source: "low-confidence",
   });
 }
 
@@ -19,9 +39,19 @@ export async function POST(req: Request) {
 
     const parsed = parseUserQuery(query);
 
+    const AI_THRESHOLD = 0.55;
+
+    if (parsed.confidence >= AI_THRESHOLD) {
+      return NextResponse.json({
+        parsed,
+        source: "rule-based",
+      });
+    }
+
+    // low confidence → will use AI later
     return NextResponse.json({
       parsed,
-      source: "rule-based", // 🔥 important for tomorrow
+      source: "low-confidence",
     });
   } catch (err) {
     console.error("Interpret error:", err);

@@ -58,6 +58,55 @@ function detectBudget(text: string): {
   };
 }
 
+function stripTrailingPlaceNoise(input: string) {
+  return (
+    input
+      .trim()
+
+      // explicit date ranges: "8 apr - 10 apr" / "8 apr to 10 apr"
+      .replace(
+        /\b\d{1,2}\s*(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s*(?:-|to|–)\s*\d{1,2}\s*(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b.*$/i,
+        "",
+      )
+
+      // single explicit date: "8 apr"
+      .replace(
+        /\b\d{1,2}\s*(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b.*$/i,
+        "",
+      )
+
+      // relative date phrases
+      .replace(
+        /\b(today|tomorrow|this\s+weekend|next\s+weekend|this\s+week|next\s+week|this\s+month|next\s+month|flexible|anytime)\b.*$/i,
+        "",
+      )
+
+      // month name on its own at the end: "Marrakech April"
+      .replace(
+        /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t|tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\b.*$/i,
+        "",
+      )
+
+      // passenger tails
+      .replace(
+        /\b\d+\s*(traveler|travellers|travelers|people|pax|passengers)\b.*$/i,
+        "",
+      )
+      .replace(/\bfor\s+\d+\b.*$/i, "")
+
+      // budget tails
+      .replace(/\b(under|below|less\s+than)\s*£?\s*\d+\b.*$/i, "")
+      .replace(/\b£\s*\d+\b.*$/i, "")
+      .replace(/\b\d+\s*(pounds|quid)\b.*$/i, "")
+
+      // trip type tails
+      .replace(/\b(return|round\s*trip|roundtrip)\b.*$/i, "")
+
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+}
+
 function extractFromTo(text: string): {
   from: string | null;
   to: string | null;
@@ -82,15 +131,16 @@ function extractFromTo(text: string): {
     .replace(/\s+/g, " ")
     .trim();
 
-  // Helper: clean "place-like" strings
   const cleanPlace = (s: string) => {
-    const x = s
-      .trim()
-      // cut trailing punctuation
-      .replace(/[.,!?]+$/g, "")
-      // collapse spaces
-      .replace(/\s+/g, " ")
-      .trim();
+    const x = stripTrailingPlaceNoise(
+      s
+        .trim()
+        // cut trailing punctuation
+        .replace(/[.,!?]+$/g, "")
+        // collapse spaces
+        .replace(/\s+/g, " ")
+        .trim(),
+    );
 
     if (!x) return null;
 
@@ -112,7 +162,7 @@ function extractFromTo(text: string): {
     }
 
     // don't allow single filler words as places
-    if (["go", "travel", "fly"].includes(x)) return null;
+    if (["go", "travel", "fly"].includes(lowered)) return null;
 
     return x;
   };
@@ -128,7 +178,7 @@ function extractFromTo(text: string): {
   // 3) Simple form first: "london to paris"
   // Stop destination capture before time/constraint words ("next", "month", etc.)
   const simpleTo = t.match(
-    /\b(.+?)\s+to\s+(.+?)(?=\s+\b(from|next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct)\b|$)/,
+    /\b(.+?)\s+to\s+(.+?)(?=\s+\b(from|next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct|under|below|less)\b|$)/,
   );
 
   if (simpleTo) {
@@ -154,7 +204,7 @@ function extractFromTo(text: string): {
 
   // 4) "from X" alone
   const fromOnly = t.match(
-    /\bfrom\s+(.+?)(?=\s+\b(next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct)\b|$)/,
+    /\bfrom\s+(.+?)(?=\s+\b(next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct|under|below|less)\b|$)/,
   );
 
   // 5) "to Y" alone
@@ -162,7 +212,7 @@ function extractFromTo(text: string): {
   // This prevents "london to paris" being treated as just "to paris".
   const toOnly = t.trim().startsWith("to ")
     ? t.match(
-        /\bto\s+(.+?)(?=\s+\b(from|next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct)\b|$)/,
+        /\bto\s+(.+?)(?=\s+\b(from|next|this|in|on|at|tomorrow|today|week|month|flexible|anytime|return|round|cheapest|fastest|best|direct|under|below|less)\b|$)/,
       )
     : null;
 

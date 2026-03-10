@@ -311,18 +311,10 @@ export default function ResultsPage() {
 
     const built = parts.join(" ").trim();
 
-    // ✅ ALWAYS prefer the raw query from the URL if it exists
-    // ✅ Prefer STRUCTURED params when they exist, otherwise fallback to raw query.
-    // This makes the pipeline AI-ready (LLM can output structured fields reliably).
-    const hasStructured =
-      !!fromParam ||
-      !!toParam ||
-      !!whenParam ||
-      !!paxParam ||
-      !!tripParam ||
-      !!cabinParam;
-
-    return (hasStructured ? built : fallback).trim() || "";
+    // Always prefer the original raw query from the URL if it exists,
+    // because it may contain constraints not yet represented in structured params
+    // such as budget ("under 50 quid") or day filters.
+    return (fallback || built).trim();
   }, [
     fromParam,
     toParam,
