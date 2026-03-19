@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 
 type VisaRequest = {
   passport: string; // can be "UK" | "EU" | "Turkey" | "GB" | "FR" | "TR" | "GBR" etc
-  destination: string; // should be ISO2 ideally, but we’ll normalize
+  destination: string;
 };
 
 const ISO3_TO_ISO2: Record<string, string> = {
@@ -21,18 +21,14 @@ const ISO3_TO_ISO2: Record<string, string> = {
 function toIso2(code: string) {
   const v = (code || "").trim().toUpperCase();
 
-  // UI labels → ISO2
+  // UI labels
   if (v === "UK") return "GB";
   if (v === "TURKEY") return "TR";
 
-  // Your “EU” option is not a real passport code.
-  // MVP choice: treat "EU" as FR (change later if you want)
   if (v === "EU") return "FR";
 
-  // ISO3 → ISO2 if we know it
   if (v.length === 3 && ISO3_TO_ISO2[v]) return ISO3_TO_ISO2[v];
 
-  // already ISO2 (GB, FR, TR, AE, etc) or unknown
   return v;
 }
 
@@ -71,7 +67,7 @@ export async function POST(req: Request) {
 
     const data = await response.json();
 
-    // API-level error (their shape)
+    // API-level error
     const payload = data?.data;
     if (data?.error || !payload) {
       return NextResponse.json({

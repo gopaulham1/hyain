@@ -81,7 +81,6 @@ export function LocationProvider({ children }: { children: React.ReactNode }) {
   // Auto-request on first load (simple MVP)
   useEffect(() => {
     getGeo();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value = useMemo(

@@ -196,7 +196,6 @@ export default function BuildQueryCard({
     let a = Math.max(1, nextAdults);
     let c = Math.max(0, nextChildren);
 
-    // cap total pax
     if (a + c > MAX_PAX) c = MAX_PAX - a;
 
     setAdults(a);
@@ -212,11 +211,9 @@ export default function BuildQueryCard({
     }
   };
 
-  // optional: if you want it to start from current `who` prop
   useEffect(() => {
     const n = parseInt(who, 10);
     if (!Number.isNaN(n) && n >= 1) updateWho(n, 0, { syncQuery: false });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -291,7 +288,6 @@ export default function BuildQueryCard({
                           setFromStage("country");
                         }}
                       >
-                        {/* You can replace this text-only block with your icon image later */}
                         <div className="flex flex-col">
                           <div className="relative w-full h-28">
                             <img
@@ -310,8 +306,7 @@ export default function BuildQueryCard({
                   </div>
                 )}
 
-                {/* STAGE 2: CITIES */}
-                {/* STAGE 2: COUNTRIES */}
+                {/* COUNTRIES */}
                 {fromStage === "country" && fromRegion && (
                   <div>
                     <div className="flex items-center justify-between px-4 pt-4 pb-2">
@@ -369,7 +364,7 @@ export default function BuildQueryCard({
                   </div>
                 )}
 
-                {/* STAGE 3: CITIES */}
+                {/* CITIES */}
                 {fromStage === "city" && fromRegion && fromCountry && (
                   <div>
                     <div className="flex items-center justify-between px-4 pt-4 pb-2">
@@ -446,7 +441,7 @@ export default function BuildQueryCard({
 
             {toOpen && (
               <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl bg-white/85 backdrop-blur-md border border-black/10 shadow-lg">
-                {/* STAGE 1: REGIONS */}
+                {/* REGIONS */}
                 {toStage === "region" && (
                   <div className="grid grid-cols-2 gap-0">
                     {REGION_OPTIONS.map((r) => (
@@ -477,7 +472,7 @@ export default function BuildQueryCard({
                   </div>
                 )}
 
-                {/* STAGE 2: COUNTRIES */}
+                {/* COUNTRIES */}
                 {toStage === "country" && toRegion && (
                   <div>
                     <div className="flex items-center justify-between px-4 pt-4 pb-2">
@@ -536,7 +531,7 @@ export default function BuildQueryCard({
                   </div>
                 )}
 
-                {/* STAGE 3: CITIES */}
+                {/* CITIES */}
                 {toStage === "city" && toRegion && toCountry && (
                   <div>
                     <div className="flex items-center justify-between px-4 pt-4 pb-2">
@@ -585,8 +580,6 @@ export default function BuildQueryCard({
           </div>
         </div>
 
-        {/* Row 2 */}
-        {/* Row 2 */}
         <div className="grid grid-cols-2 gap-3">
           {/* WHEN */}
           <div className="relative">

@@ -141,7 +141,6 @@ export async function GET(request: Request) {
 
   const norm = (s: string) => s.trim().toLowerCase();
 
-  // We match per-field, not "anywhere in the whole string"
   const fieldContains = (field: string, wanted: string) =>
     norm(field).includes(norm(wanted));
 
@@ -183,7 +182,7 @@ export async function GET(request: Request) {
     return Response.json(cloned);
   }
 
-  // ✅ Use rawQuery for intent (cheap/fast/direct), but remove filler for route parsing
+  // Use rawQuery for intent (cheap/fast... but remove filler for route parsing
   const routeQuery = rawQuery
     .replace(/\bcheap\s+flights?\b/g, "")
     .replace(/\bcheapest\b/g, "")
@@ -219,9 +218,8 @@ export async function GET(request: Request) {
   });
 
   const ranked = filtered
-    .map((f) => ({ ...f })) // ✅ clone objects so tagging is safe
+    .map((f) => ({ ...f }))
     .sort((a, b) => {
-      // Intent-based ordering
       if (sortIntent === "fastest") {
         const durDiff = parseDuration(a.duration) - parseDuration(b.duration);
         if (durDiff !== 0) return durDiff;
@@ -262,12 +260,9 @@ export async function GET(request: Request) {
       return parseDuration(a.duration) - parseDuration(b.duration);
     });
 
-  // ✅ Add tags/notes so the UI can explain "why this result"
   if (ranked.length > 0) {
-    // reset notes if you want
     ranked.forEach((f) => {
       f.tag = undefined;
-      // keep your original note as fallback
     });
 
     // choose “winner” based on intent

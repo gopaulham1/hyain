@@ -21,7 +21,6 @@ async function cityToCountryCode(city: string) {
 }
 
 async function countryCodeToCurrency(code: string) {
-  // REST Countries alpha endpoint
   const url = `https://restcountries.com/v3.1/alpha/${encodeURIComponent(code)}`;
 
   const r = await fetch(url, { next: { revalidate: 60 * 60 * 24 } });
@@ -62,7 +61,7 @@ export async function GET(req: Request) {
       countryCodeToCurrency(toCountry),
     ]);
 
-    // --- FX RATE (provider 1: Frankfurter) ---
+    // --- FX RATE - Frankfurter ---
     const fxUrl = `https://api.frankfurter.app/latest?from=${encodeURIComponent(
       fromCurrency,
     )}&to=${encodeURIComponent(toCurrency)}`;
@@ -82,9 +81,7 @@ export async function GET(req: Request) {
           fxDate = fxJson?.date ?? null;
         }
       }
-    } catch {
-      // ignore and fallback below
-    }
+    } catch {}
 
     // --- FX RATE (fallback provider) ---
     if (rate === null) {

@@ -16,7 +16,6 @@ import {
   getRelativeDateLabelFromQuery,
 } from "../lib/results/dateQuery";
 
-// --- Vibe -> destination suggestions (v1) ---
 const VIBE_SUGGESTIONS: Record<
   "warm" | "beach" | "skiing" | "citybreak" | "nature" | "romantic",
   string[]
@@ -130,8 +129,6 @@ function getDateRangeFromIntent(
 
   if (!intent) return null;
 
-  // Let dateQuery handle "month/range/date" precisely from raw query for now
-  // (we'll move those into parser later)
   if (intent === "month" || intent === "range" || intent === "date")
     return null;
 
@@ -222,7 +219,6 @@ function flightInRange(
   range: { start: Date; end: Date },
 ) {
   const dep = new Date(departureTimeISO);
-  // Keep flights that depart in [start, end)
   return dep >= range.start && dep < range.end;
 }
 
@@ -251,7 +247,6 @@ type DayFilter = "weekend" | "weekday";
 function getDayFilterFromQuery(q: string): DayFilter | null {
   const s = q.toLowerCase();
 
-  // If "weekend" is part of a DATE phrase, don't treat it as a day filter
   const explicitlyOnly =
     /\bonly\s+weekends?\b/.test(s) || /\bweekends?\s+only\b/.test(s);
 
@@ -259,13 +254,13 @@ function getDayFilterFromQuery(q: string): DayFilter | null {
     return null;
   }
 
-  // Weekend-only phrases
+  // Weekend only phrases
   const wantsWeekend =
     /\bonly\s+weekends?\b/.test(s) ||
     /\bweekends?\s+only\b/.test(s) ||
     /\bonly\s+weekend\b/.test(s);
 
-  // Weekday-only phrases
+  // Weekday only phrases
   const wantsWeekday =
     /\bonly\s+weekdays?\b/.test(s) ||
     /\bweekdays?\s+only\b/.test(s) ||
@@ -287,7 +282,7 @@ type SortTab = "best" | "cheapest" | "fastest";
 
 export default function ResultsPage() {
   const searchParams = useSearchParams();
-  // Prefer structured params, but keep `query` for backwards compatibility.
+
   const fromParam = searchParams.get("from");
   const toParam = searchParams.get("to");
   const whenParam = searchParams.get("when");
@@ -295,7 +290,6 @@ export default function ResultsPage() {
   const tripParam = searchParams.get("trip");
   const cabinParam = searchParams.get("cabin");
 
-  // Build a readable query string for display + API (until API supports structured params)
   const query = useMemo(() => {
     const fallback = searchParams.get("query") ?? "";
     const parts: string[] = [];
@@ -311,9 +305,6 @@ export default function ResultsPage() {
 
     const built = parts.join(" ").trim();
 
-    // Always prefer the original raw query from the URL if it exists,
-    // because it may contain constraints not yet represented in structured params
-    // such as budget ("under 50 quid") or day filters.
     return (fallback || built).trim();
   }, [
     fromParam,
@@ -325,11 +316,9 @@ export default function ResultsPage() {
     searchParams,
   ]);
 
-  // Pretty display for the input (doesn't change the actual query used for parsing/fetch)
   const displayQueryInput = useMemo(() => {
     const q = (query ?? "").trim();
 
-    // If query starts with "to X" and no explicit "from", show "Anywhere to X"
     if (/^to\s+\S+/i.test(q) && !/\bfrom\b/i.test(q)) {
       return `Anywhere ${q}`.replace(/\s+/g, " ").trim();
     }
@@ -339,8 +328,6 @@ export default function ResultsPage() {
 
   const parsed = useMemo(() => parseUserQuery(query), [query]);
 
-  // ✅ Discovery mode: if user asked for "somewhere + vibe(s)" but hasn't chosen a destination,
-  // show NO results until they pick a destination (chip click or typing "to X").
   const hasAnyVibe = (parsed.vibes ?? []).length > 0;
 
   const hasDestination =
@@ -360,8 +347,6 @@ export default function ResultsPage() {
 
     if (!vibe) return [];
 
-    // Only suggest if user didn't already pick a real destination
-    // (i.e. destination is null/Anywhere)
     const toIsAnywhere =
       !parsed.to || parsed.to.trim().toLowerCase() === "anywhere";
 
@@ -383,7 +368,6 @@ export default function ResultsPage() {
 
   const dayFilter = useMemo(() => getDayFilterFromQuery(query), [query]);
 
-  // Choose ONE date label to display (priority: human label > intent)
   const dateLabel = useMemo(() => {
     if (relativeDateLabel) {
       return relativeDateLabel
@@ -411,7 +395,6 @@ export default function ResultsPage() {
     return null;
   }, [relativeDateLabel, parsed.dateIntent, endOfMonthLabel, monthLabel]);
 
-  // Clean “to” / “from” for display so words like “only weekends” don’t attach to the city
   const displayRoute = useMemo(() => {
     const rawFrom = parsed.from ?? "Anywhere";
     const rawTo = parsed.to ?? "Anywhere";
@@ -486,29 +469,23 @@ export default function ResultsPage() {
 
   const router = useRouter();
 
-  // This is what the input shows (so user can edit + search again)
   const [queryInput, setQueryInput] = useState<string>(query);
 
-  // Keep input in sync when URL query changes (e.g. back/forward)
   useEffect(() => {
     setQueryInput(displayQueryInput);
   }, [displayQueryInput]);
 
   useEffect(() => {
-    // ✅ sync builder from the SAME cleaned values used in "Interpreted as"
     setFrom(displayRoute.from);
     setTo(displayRoute.to);
 
-    // ✅ WHEN
     if (dateLabel) setWhen(dateLabel);
     else setWhen("Any time");
 
-    // ✅ WHO
     const pax = parsed.passengers ?? 1;
     setWho(`${pax} traveler${pax === 1 ? "" : "s"}`);
   }, [displayRoute, dateLabel, parsed.passengers]);
 
-  // Builder state (same as home)
   const [from, setFrom] = useState("London");
   const [to, setTo] = useState("Anywhere");
   const [when, setWhen] = useState("Any time");
@@ -522,18 +499,15 @@ export default function ResultsPage() {
     const w = next?.when ?? when;
     const p = next?.who ?? who;
 
-    // 🔒 CRITICAL FIX: strip passengers from places
     const f = stripPassengers(fRaw);
     const t = stripPassengers(tRaw);
 
-    // Preserve budget from current input
     const currentParsed = parseUserQuery(queryInput);
     const budgetTail =
       currentParsed.budget?.max != null
         ? ` under £${currentParsed.budget.max}`
         : "";
 
-    // Preserve day filter (only weekends / only weekdays)
     const currentDayFilter = getDayFilterFromQuery(queryInput);
     const dayTail =
       currentDayFilter === "weekend"
@@ -553,13 +527,29 @@ export default function ResultsPage() {
       .trim();
   }
 
-  function submitSearch() {
+  async function submitSearch() {
     if (!queryInput.trim()) return;
 
-    const nextParsed = parseUserQuery(queryInput);
+    try {
+      const res = await fetch(
+        `/api/interpret?query=${encodeURIComponent(queryInput)}`,
+      );
 
-    // ✅ keep the input exactly as user typed
-    router.push(buildResultsUrl(nextParsed));
+      if (!res.ok) {
+        throw new Error("Failed to interpret query");
+      }
+
+      const data = await res.json();
+
+      console.log("🧭 INTERPRET RESPONSE (RESULTS PAGE):", data);
+
+      router.push(buildResultsUrl(data.parsed));
+    } catch (err) {
+      console.error("Interpret failed on results page:", err);
+
+      const fallbackParsed = parseUserQuery(queryInput);
+      router.push(buildResultsUrl(fallbackParsed));
+    }
   }
 
   const [loading, setLoading] = useState(true);
@@ -570,7 +560,6 @@ export default function ResultsPage() {
   const [tab, setTab] = useState<SortTab>("best");
 
   useEffect(() => {
-    // ✅ Don't fetch / show flights until user picks a destination
     if (needsDestinationPick) {
       setAllResults([]);
       setError(null);
@@ -604,14 +593,12 @@ export default function ResultsPage() {
   const results = useMemo(() => {
     let cloned = [...allResults];
 
-    // ✅ DATE FILTER (next week / next month / March etc.)
     const range =
       getDateRangeFromIntent(parsed.dateIntent) ?? getDateRangeFromQuery(query);
     if (range) {
       cloned = cloned.filter((f) => flightInRange(f.departureTime, range));
     }
 
-    // Day filter (weekend-only / weekday-only)
     const dayFilter = getDayFilterFromQuery(query);
     if (dayFilter) {
       cloned = cloned.filter((f) => {
@@ -620,7 +607,6 @@ export default function ResultsPage() {
       });
     }
 
-    // 💰 Budget filter (hard max)
     if (parsed.budget?.max != null) {
       cloned = cloned.filter((f) => {
         const priceNum = parsePrice(f.price);
@@ -640,7 +626,6 @@ export default function ResultsPage() {
       return cloned;
     }
 
-    // "best" (balanced feel)
     cloned.sort((a, b) => {
       const priceDiff = parsePrice(a.price) - parsePrice(b.price);
       if (priceDiff !== 0) return priceDiff;
@@ -666,7 +651,6 @@ export default function ResultsPage() {
 
   return (
     <main className="min-h-screen relative">
-      {/* Background image (same approach as home page) */}
       <div
         className="fixed inset-0 -z-10 bg-cover bg-center"
         style={{ backgroundImage: "url('/bg.jpg')" }}
@@ -678,7 +662,6 @@ export default function ResultsPage() {
           <Navbar />
           {/* Big glass container */}
           <section className="mt-8 rounded-[28px] p-8 md:p-10 hyain-glass-light-strong">
-            {/* HERO SEARCH (same vibe as home, but inside results) */}
             <div className="rounded-[28px] p-8 hyain-glass-light-soft-solid mb-14">
               <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
                 {/* LEFT SIDE — text + search */}
@@ -716,7 +699,6 @@ export default function ResultsPage() {
                       </button>
                     </div>
                   </div>
-                  {/* Interpreted as (under search bar, above pills) */}
                   <div className="mt-3">
                     <div className="inline-flex flex-wrap items-center gap-2 rounded-xl bg-white/60 px-3 py-2 text-sm backdrop-blur">
                       <span className="text-gray-600">Interpreted as:</span>
@@ -781,20 +763,16 @@ export default function ResultsPage() {
                           <button
                             key={dest}
                             onClick={() => {
-                              // Use the SAME cleaned value you show in "Interpreted as"
                               const cleanFrom = displayRoute.from;
                               const hasRealFrom =
                                 cleanFrom && cleanFrom !== "Anywhere";
 
-                              // Keep budget (consistent format)
                               const max = parsed.budget?.max;
                               const budgetTail =
                                 max != null ? ` under £${max}` : "";
 
-                              // Preserve month / when (e.g. "March", "Next Month", "Next weekend")
                               const whenTail = dateLabel ? ` ${dateLabel}` : "";
 
-                              // ✅ Preserve day filters (only weekends / only weekdays)
                               const dayTail =
                                 dayFilter === "weekend"
                                   ? " only weekends"
@@ -802,7 +780,6 @@ export default function ResultsPage() {
                                     ? " only weekdays"
                                     : "";
 
-                              // Build query in a safe order: FROM -> TO -> BUDGET -> WHEN -> DAY FILTER
                               const base = hasRealFrom
                                 ? `${cleanFrom} to ${dest}`
                                 : `to ${dest}`;
@@ -815,20 +792,15 @@ export default function ResultsPage() {
                               const tripTail =
                                 parsed.tripType === "return" ? " return" : "";
 
-                              // optional: if you also parse cabin somewhere
-                              // const cabinTail = parsed.cabin ? ` ${parsed.cabin}` : "";
-
                               const nextQuery =
                                 `${base}${budgetTail}${whenTail}${dayTail}${paxTail}${tripTail}`
                                   .replace(/\s+/g, " ")
                                   .trim();
 
-                              // Update UI + BuildQueryCard
                               setQueryInput(nextQuery);
                               if (hasRealFrom) setFrom(cleanFrom);
                               setTo(dest);
 
-                              // Push URL so results + right card update correctly
                               router.push(
                                 buildResultsUrl(parseUserQuery(nextQuery)),
                               );
@@ -930,7 +902,6 @@ export default function ResultsPage() {
                   </div>
                 )}
 
-                {/* Footer pill like your mock */}
                 {!needsDestinationPick && !loading && results.length > 0 && (
                   <div className="mt-6 flex justify-center">
                     <div className="rounded-full bg-white/35 border border-black/10 px-5 py-2 text-sm md:text-base text-gray-700 backdrop-blur">

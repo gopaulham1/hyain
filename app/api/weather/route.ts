@@ -9,7 +9,6 @@ type GeoResult = {
 };
 
 function weatherCodeLabel(code: number) {
-  // Super simple, good-enough mapping (MVP vibes)
   if (code === 0) return { emoji: "☀️", label: "Clear" };
   if (code <= 2) return { emoji: "🌤️", label: "Mostly clear" };
   if (code === 3) return { emoji: "☁️", label: "Cloudy" };
@@ -33,7 +32,7 @@ export async function GET(req: Request) {
       );
     }
 
-    // 1) Geocode city -> lat/lon (Open-Meteo geocoding)
+    // 1) Geocode city -> lat/lon
     const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
       city,
     )}&count=1&language=en&format=json`;
@@ -56,7 +55,7 @@ export async function GET(req: Request) {
       );
     }
 
-    // 2) Forecast (daily highs/lows + weather code)
+    // 2) Forecast
     const forecastUrl = `https://api.open-meteo.com/v1/forecast?latitude=${hit.latitude}&longitude=${hit.longitude}&daily=temperature_2m_max,temperature_2m_min,weathercode&timezone=auto`;
 
     const wRes = await fetch(forecastUrl, { next: { revalidate: 60 * 30 } });

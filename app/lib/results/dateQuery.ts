@@ -53,10 +53,9 @@ function endOfDay(d: Date) {
 }
 
 function startOfWeekMonday(d: Date) {
-  // Monday as start of week
   const sd = startOfDay(d);
-  const day = sd.getDay(); // Sun=0 ... Sat=6
-  const diff = day === 0 ? -6 : 1 - day; // move back to Monday
+  const day = sd.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
   const monday = new Date(sd);
   monday.setDate(monday.getDate() + diff);
   return monday;
@@ -88,15 +87,13 @@ function monthRange(year: number, monthIndex: number): DateRange {
 
 function findMonthToken(q: string): { token: string; idx: number } | null {
   const s = q.toLowerCase();
-  // prefer longer keys first to avoid "mar" matching inside "march" weirdness
+
   const keys = Object.keys(MONTHS).sort((a, b) => b.length - a.length);
   for (const k of keys) {
     if (new RegExp(`\\b${k}\\b`).test(s)) return { token: k, idx: MONTHS[k] };
   }
   return null;
 }
-
-// EXTRACTS MONTH FROM QUERY E.G. LONDON TO PARIS IN -> MARCH <-
 
 export function getMonthLabelFromQuery(q: string): string | null {
   const found = findMonthToken(q);
@@ -115,9 +112,6 @@ export function getEndOfMonthLabelFromQuery(q: string): string | null {
 
   return `End of ${MONTH_LABELS[idx]}`;
 }
-
-// GETS WHATEVER DATE YOU TYPE IN WHETHER NEXT MONTH OR THIS WEEK WHATEVER,
-// AND PUTS IT IN A RANGE OF {START DATE: X, END DATE: Y}
 
 export function getDateRangeFromQuery(q: string): DateRange | null {
   const query = q.toLowerCase();
@@ -171,7 +165,7 @@ export function getDateRangeFromQuery(q: string): DateRange | null {
     return monthRange(year, month);
   }
 
-  // --- D) Explicit date range: "4 Feb - 7 Feb" / "4 Feb to 7 Feb" ---
+  // --- D) Explicit date range
   const range = query.match(
     /\b(\d{1,2})\s*([a-z]+)\s*(?:-|to|–)\s*(\d{1,2})\s*([a-z]+)\b/,
   );
@@ -193,7 +187,7 @@ export function getDateRangeFromQuery(q: string): DateRange | null {
     }
   }
 
-  // --- E) "end of March" -> full month range (or you can later narrow to last 7-10 days) ---
+  // --- E) "end of March"
   const endOf = query.match(/\bend\s+of\s+([a-z]+)\b/);
   if (endOf) {
     const idx = MONTHS[endOf[1]];
@@ -202,7 +196,7 @@ export function getDateRangeFromQuery(q: string): DateRange | null {
     }
   }
 
-  // --- F) Single date: "4 Feb" ---
+  // --- F) Single date: "4 Feb"
   const single = query.match(/\b(\d{1,2})\s*([a-z]+)\b/);
   if (single) {
     const day = Number(single[1]);
@@ -214,7 +208,7 @@ export function getDateRangeFromQuery(q: string): DateRange | null {
     }
   }
 
-  // --- G) Month name anywhere: "March" -> full month ---
+  // --- G) Month name anywhere
   const found = findMonthToken(query);
   if (found) {
     return monthRange(now.getFullYear(), found.idx);
@@ -222,10 +216,6 @@ export function getDateRangeFromQuery(q: string): DateRange | null {
 
   return null;
 }
-
-// SO BASICALLY THIS GUY WILL JUST TAKE WHATEVER DATE YOU'VE TYPED AND JUST MAKES IT LOOK BETTER
-// IF YOU SAY LIKE ONLY WEEKENDS, FORMATS THIS IDEA IN TO ONLY WEEKEND OR LIKE TODAYS INTO TODAY
-// OR LIKE MAR INTO MARCH
 
 export function getRelativeDateLabelFromQuery(q: string): string | null {
   const query = q.toLowerCase();

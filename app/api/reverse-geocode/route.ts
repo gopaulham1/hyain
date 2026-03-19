@@ -11,14 +11,13 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Missing lat/lon" }, { status: 400 });
   }
 
-  // OpenStreetMap Nominatim (free, rate-limited, good for MVP)
+  // OpenStreetMap
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(
     lat,
   )}&lon=${encodeURIComponent(lon)}`;
 
   const res = await fetch(url, {
     headers: {
-      // Nominatim wants a User-Agent. Keep it simple for dev.
       "User-Agent": "Hyain/0.1",
     },
   });

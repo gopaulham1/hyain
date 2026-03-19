@@ -3,20 +3,17 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 
 function tmDate(d: Date) {
-  // Ticketmaster wants: YYYY-MM-DDTHH:mm:ssZ (no milliseconds)
   return d.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
 function shouldRejectTicketmasterEvent(e: any) {
   const name = String(e?.name ?? "").toLowerCase();
 
-  // Fast keyword blacklist (covers 95% of junk add-ons)
   const badName =
     /\b(parking|permit|upgrade|vip|package|club|jazz|seat|meet\s*&?\s*greet|fast\s*track|add[-\s]?on|bundle|pass|insurance|merch|shirt|t-?shirt|voucher|gift|shuttle)\b/i.test(
       name,
     );
 
-  // Classification-based blacklist (when TM tags it)
   const cls = e?.classifications?.[0];
   const segment = String(cls?.segment?.name ?? "").toLowerCase();
   const genre = String(cls?.genre?.name ?? "").toLowerCase();
@@ -57,7 +54,7 @@ export async function GET(req: Request) {
       59,
     );
 
-    // Format for Ticketmaster (ISO with Z)
+    // Format for Ticketmaster
     const startDateTime = tmDate(startDate);
     const endDateTime = tmDate(endOfNextMonth);
 
@@ -79,7 +76,6 @@ export async function GET(req: Request) {
 
     const url = `https://app.ticketmaster.com/discovery/v2/events.json?${params.toString()}`;
 
-    // const r = await fetch(url, { next: { revalidate: 60 * 30 } }); // cache 30 mins
     const r = await fetch(url, { cache: "no-store" });
 
     let data = await r.json();
@@ -97,7 +93,6 @@ export async function GET(req: Request) {
 
     let raw = data?._embedded?.events ?? [];
 
-    // ✅ Fallback: if nothing in this month + next month, retry with "any time"
     if (r.ok && raw.length === 0) {
       const fallbackParamsObj: Record<string, string> = {
         apikey: apiKey,
@@ -106,7 +101,6 @@ export async function GET(req: Request) {
         sort: "date,asc",
       };
 
-      // keep countryCode if you add it dynamically
       if (paramsObj.countryCode) {
         fallbackParamsObj.countryCode = paramsObj.countryCode;
       }
@@ -143,7 +137,6 @@ export async function GET(req: Request) {
       })
       .filter((e: any) => e?.name && e?.url);
 
-    // ✅ Diversity: avoid same first word
     const seenFirstWords = new Set<string>();
 
     const events = eventsRaw

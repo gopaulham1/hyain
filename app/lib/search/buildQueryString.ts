@@ -1,8 +1,6 @@
 import type { ParsedQuery } from "./types";
 
 export function buildResultsUrl(parsed: ParsedQuery) {
-  // v1: keep backwards-compat by ALSO including a readable `query`.
-  // Prefer structured params so Results page can use them directly.
   const params = new URLSearchParams();
 
   if (parsed.from) params.set("from", parsed.from);
@@ -12,7 +10,6 @@ export function buildResultsUrl(parsed: ParsedQuery) {
   if (parsed.tripType) params.set("trip", parsed.tripType);
   if (parsed.cabin) params.set("cabin", parsed.cabin);
 
-  // Human-readable fallback for display + API (until API supports structured params)
   const parts: string[] = [];
 
   if (parsed.from && parsed.to) parts.push(`${parsed.from} to ${parsed.to}`);
@@ -24,10 +21,8 @@ export function buildResultsUrl(parsed: ParsedQuery) {
   if (parsed.tripType === "return") parts.push("return");
   if (parsed.cabin) parts.push(parsed.cabin);
 
-// Always preserve exactly what the user typed
-const raw = parsed.raw.trim();
-if (raw) params.set("query", raw);
-
+  const raw = parsed.raw.trim();
+  if (raw) params.set("query", raw);
 
   return `/results?${params.toString()}`;
 }

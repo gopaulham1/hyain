@@ -33,7 +33,7 @@ function formatShortDate(iso?: string) {
 }
 
 function formatFxRate(n: number) {
-  // nice readable rate: 4.957 -> 4.96, 23.1107 -> 23.11
+  // nice readable rate: 4.957 -> 4.96
   return n >= 10 ? n.toFixed(2) : n.toFixed(3);
 }
 
@@ -87,7 +87,7 @@ function SideRow({
     >
       {flushLeft ? (
         <>
-          {/* Left icon badge (flush + pilled) */}
+          {/* Left icon badge */}
           {icon ? (
             <div className="shrink-0 pr-3">
               <div className="h-14 w-14 rounded-2xl bg-white/60 backdrop-blur-sm border border-black/10 grid place-items-center text-4xl shadow-sm">
@@ -123,7 +123,7 @@ function SideRow({
       )}
 
       {/* Arrow */}
-      {/* Arrow (only for clickable rows) */}
+
       {onClick ? (
         <svg
           className={
@@ -178,7 +178,7 @@ function EventRow({
         "hover:shadow-md hover:-translate-y-[1px]",
       ].join(" ")}
     >
-      {/* Thumbnail (pilled badge like destination icons) */}
+      {/* Thumbnail */}
       <div className="shrink-0 pr-3">
         <div className="h-14 w-14 rounded-2xl bg-white/60 backdrop-blur-sm border border-black/10 shadow-sm overflow-hidden grid place-items-center">
           {canRenderImage ? (
@@ -295,13 +295,10 @@ export default function ResultsSidebar({
   useEffect(() => {
     return;
     const key = `${passportIso2}-${destinationIso2}`;
-
-    // prevents double-call (dev fast refresh / strict mode vibes)
     if (lastVisaKeyRef.current === key) return;
 
     lastVisaKeyRef.current = key;
     handleCheckVisa();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [passportIso2, destinationIso2]);
 
   const countryNameMap: Record<string, string> = {
@@ -479,7 +476,6 @@ export default function ResultsSidebar({
                     {passportLabel} passport · tourism & business
                   </p>
 
-                  {/* Passport + destination pills (static) */}
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
                     <span className="font-semibold">Passport</span>
                     <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold">

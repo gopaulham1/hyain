@@ -1,12 +1,12 @@
 export type WhatsOnCard = {
   id: string;
   title: string;
-  meta: string; // e.g. "Feb · Paris"
+  meta: string;
   img: string;
   alt: string;
 
-  city: string; // used for routing/search
-  countryCode: string; // optional, handy later
+  city: string;
+  countryCode: string;
 };
 
 export const whatsOnSoonCards: WhatsOnCard[] = [
@@ -64,5 +64,4 @@ export const whatsOnSoonCards: WhatsOnCard[] = [
     city: "Beijing",
     countryCode: "CN",
   },
-  // add 3 more for your 2nd column
 ];

@@ -2,11 +2,11 @@ export type TourItem = {
   id: string;
   title: string;
   subtitle: string;
-  pill?: string; // small tag like “Top pick”
-  icon?: string; // emoji for now
-  viator_link?: string; // Link to Viator
-  img?: string; // local image path in /public
-  href?: string; // later when you have tickets links
+  pill?: string;
+  icon?: string;
+  viator_link?: string;
+  img?: string;
+  href?: string;
 };
 
 export const toursByCity: Record<string, TourItem[]> = {

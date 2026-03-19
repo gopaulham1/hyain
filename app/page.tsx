@@ -31,12 +31,11 @@ export default function Home() {
   };
 
   useEffect(() => {
-    // Only auto-fill origin if user hasn't changed it manually yet
     if (!geo?.city) return;
     if (from !== "London") return;
 
     setFrom(geo.city);
-  }, [geo?.city]); // intentionally NOT depending on `from` to avoid loops
+  }, [geo?.city]);
 
   const router = useRouter();
   function buildQuery(
@@ -50,10 +49,29 @@ export default function Home() {
     return `Flights from ${f} to ${t} ${w} ${p}`.replace(/\s+/g, " ").trim();
   }
 
-  function submitSearch() {
+  async function submitSearch() {
     if (!query.trim()) return;
-    const parsed = parseUserQuery(query);
-    router.push(buildResultsUrl(parsed));
+
+    try {
+      const res = await fetch(
+        `/api/interpret?query=${encodeURIComponent(query)}`,
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to interpret query");
+      }
+
+      const data = await res.json();
+
+      console.log("🧭 INTERPRET RESPONSE (HOME PAGE):", data);
+
+      router.push(buildResultsUrl(data.parsed));
+    } catch (err) {
+      console.error("Interpret failed on home page:", err);
+
+      const fallbackParsed = parseUserQuery(query);
+      router.push(buildResultsUrl(fallbackParsed));
+    }
   }
 
   const textHeroSub = "text-base md:text-lg text-gray-700";

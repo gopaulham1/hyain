@@ -1,7 +1,7 @@
 export type CheapestDeal = {
   city: string;
   month: string;
-  price: string; // keep as string so you can store "£24"
+  price: string;
   img: string;
   alt: string;
 };
