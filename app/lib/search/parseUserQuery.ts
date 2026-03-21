@@ -426,39 +426,24 @@ export function parseUserQuery(input: string): ParsedQuery {
   const departDateISO = null;
   const returnDateISO = null;
 
-  // confidence heuristic (v2) — tuned for AI gating
-  // Idea: confidence reflects how "actionable" the query is without help.
-  // Route clarity matters most, then time, then constraints.
   let confidence = 0.05;
 
   const hasFrom = !!from;
   const hasTo = !!to;
   const hasRoute = hasFrom && hasTo;
 
-  // If destination is missing but we have vibes, it's more "discovery" than "search"
   const hasVibes = (vibes?.length ?? 0) > 0;
 
-  // Route signals
   if (hasRoute) confidence += 0.55;
-  else if (hasTo)
-    confidence += 0.25; // "to Paris"
-  else if (hasFrom) confidence += 0.15; // "from London" only
+  else if (hasTo) confidence += 0.25;
+  else if (hasFrom) confidence += 0.15;
 
-  // Time signals
   if (dateIntent) confidence += 0.15;
 
-  // Constraints
   if (passengers != null) confidence += 0.05;
   if (budget?.max != null) confidence += 0.05;
 
-  // // Trip/cabin are mild signals
-  // if (tripType && tripType !== "oneway") confidence += 0.03;
-  // if (cabin) confidence += 0.02;
-
-  // Discovery penalty: vibes with no concrete destination should not look "high confidence"
   if (hasVibes && !hasTo) confidence -= 0.15;
-
-  // Clamp
   confidence = Math.max(0, Math.min(1, confidence));
 
   return {
