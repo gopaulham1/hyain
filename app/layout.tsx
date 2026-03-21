@@ -1,10 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Playfair_Display, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { LocationProvider } from "./providers/LocationProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const sans = Inter({
   subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+});
+
+const serif = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
@@ -25,9 +33,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${sans.variable} ${serif.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <LocationProvider>{children}</LocationProvider>
       </body>
     </html>
   );

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" id="person">
+  <g transform="translate(-60 -484)">
+    <path fill-rule="evenodd" d="M68 502c-3.301855 0-6 2.69814-6 6v3c0 1.64501 1.354996 3 3 3h22c1.645004 0 3-1.35499 3-3v-3c0-3.30186-2.698145-6-6-6zM76 486c-3.854137 0-7 3.14585-7 7 0 3.85415 3.145863 7 7 7 3.854137 0 7-3.14585 7-7 0-3.85415-3.145863-7-7-7z" color="#000" style="-inkscape-stroke:none"></path>
+  </g>
+</svg>
